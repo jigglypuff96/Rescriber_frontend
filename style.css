@@ -1,0 +1,14 @@
+/* style.css */
+
+.highlight {
+  background-color: yellow;
+}
+
+.tooltip {
+  position: absolute;
+  background-color: black;
+  color: white;
+  padding: 5px;
+  border-radius: 3px;
+  z-index: 1000;
+}
