@@ -18,5 +18,12 @@
   "action": {
     "default_popup": "popup.html",
     "default_icon": "images/16.png"
-  }
+  },
+  "options_page": "options.html",
+  "web_accessible_resources": [
+    {
+      "resources": ["openai.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
