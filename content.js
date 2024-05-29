@@ -1,25 +1,51 @@
-let enabled = true; // Default state
+let enabled = true;
+
+console.log("Content script loaded");
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request.enabled !== undefined) {
     enabled = request.enabled;
+    console.log("Received new state:", enabled);
+    sendResponse({ status: "State updated" });
+  }
+  if (request.action === "detect") {
+    detectWords();
+  } else if (request.action === "replace") {
+    replaceWords();
   }
 });
 
-document.addEventListener("input", (event) => {
+function detectWords() {
   if (!enabled) return;
-  const target = event.target;
-  if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") {
-    const value = target.value;
+
+  const inputs = document.querySelectorAll("textarea, input[type='text']");
+  inputs.forEach((input) => {
+    const value = input.value;
     const highlightedValue = value.replace(
       /(apple)/g,
       '<span class="highlight">$1</span>'
     );
-    target.value = value;
-    displayHighlight(target, highlightedValue);
-  }
-});
+    displayHighlight(input, highlightedValue);
+  });
+}
+
+function replaceWords() {
+  const textareas = document.querySelectorAll("textarea");
+  const inputs = document.querySelectorAll("input[type='text']");
+
+  textareas.forEach((textarea) => {
+    textarea.value = textarea.value.replace(/apple/g, "pear");
+  });
+
+  inputs.forEach((input) => {
+    input.value = input.value.replace(/apple/g, "pear");
+  });
+
+  // Remove tooltips after replacement
+  const existingTooltips = document.querySelectorAll(".tooltip");
+  existingTooltips.forEach((existingTooltip) => existingTooltip.remove());
+}
 
 function displayHighlight(target, highlightedValue) {
   const existingTooltips = document.querySelectorAll(".tooltip");
@@ -29,40 +55,28 @@ function displayHighlight(target, highlightedValue) {
   tooltip.classList.add("tooltip");
   tooltip.innerHTML = highlightedValue;
 
-  const rect = target.getBoundingClientRect();
-  tooltip.style.top = `${rect.top + window.scrollY + target.offsetHeight}px`;
-  tooltip.style.left = `${rect.left + window.scrollX}px`;
-
   document.body.appendChild(tooltip);
+
+  const rect = target.getBoundingClientRect();
+  tooltip.style.left = `${rect.left + window.scrollX}px`;
+  document.body.appendChild(tooltip);
+  const tooltipHeight = tooltip.offsetHeight;
+  const singleLineHeight = parseFloat(
+    window.getComputedStyle(target).lineHeight
+  );
+
+  // Position the tooltip above or below the input box based on its height
+  if (tooltipHeight > singleLineHeight) {
+    tooltip.style.top = `${rect.top + window.scrollY - tooltipHeight}px`;
+  } else {
+    tooltip.style.top = `${rect.top + window.scrollY + target.offsetHeight}px`;
+  }
+
   target.addEventListener("blur", () => {
     tooltip.remove();
   });
 
   target.addEventListener("input", () => {
     tooltip.remove();
-  });
-}
-
-if (!enabled) {
-  const existingReplaceButtons = document.querySelectorAll(".replace-button");
-  existingReplaceButtons.forEach((existingReplaceButton) =>
-    existingReplaceButton.remove()
-  );
-} else {
-  const replaceButton = document.createElement("button");
-  replaceButton.innerText = "Replace!";
-  replaceButton.classList.add("replace-button");
-  document.body.appendChild(replaceButton);
-
-  replaceButton.addEventListener("click", () => {
-    const inputs = document.querySelectorAll("textarea, input");
-    inputs.forEach((input) => {
-      input.value = input.value.replace(/apple/g, "pear");
-      const event = new Event("input", {
-        bubbles: true,
-        cancelable: true,
-      });
-      input.dispatchEvent(event);
-    });
   });
 }

@@ -20,11 +20,26 @@
       #toggleButton.off {
         background-color: #dc3545;
       }
+      .action-button {
+        display: block;
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .action-button:hover {
+        background-color: #0056b3;
+      }
     </style>
   </head>
   <body>
     <h1>Auto Reviser</h1>
     <button id="toggleButton">Disable</button>
+    <button id="detectButton" class="action-button">Detect!</button>
+    <button id="replaceButton" class="action-button">Replace!</button>
 
     <script src="popup.js"></script>
   </body>
