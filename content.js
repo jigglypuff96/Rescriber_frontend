@@ -1,4 +1,14 @@
+let enabled = true; // Default state
+
+// Listen for messages from the popup
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.enabled !== undefined) {
+    enabled = request.enabled;
+  }
+});
+
 document.addEventListener("input", (event) => {
+  if (!enabled) return;
   const target = event.target;
   if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") {
     const value = target.value;
@@ -33,20 +43,26 @@ function displayHighlight(target, highlightedValue) {
   });
 }
 
-// Add a button to the bottom right corner of the page
-const replaceButton = document.createElement("button");
-replaceButton.innerText = "Replace!";
-replaceButton.classList.add("replace-button");
-document.body.appendChild(replaceButton);
+if (!enabled) {
+  const existingReplaceButtons = document.querySelectorAll(".replace-button");
+  existingReplaceButtons.forEach((existingReplaceButton) =>
+    existingReplaceButton.remove()
+  );
+} else {
+  const replaceButton = document.createElement("button");
+  replaceButton.innerText = "Replace!";
+  replaceButton.classList.add("replace-button");
+  document.body.appendChild(replaceButton);
 
-replaceButton.addEventListener("click", () => {
-  const inputs = document.querySelectorAll("textarea, input");
-  inputs.forEach((input) => {
-    input.value = input.value.replace(/apple/g, "pear");
-    const event = new Event("input", {
-      bubbles: true,
-      cancelable: true,
+  replaceButton.addEventListener("click", () => {
+    const inputs = document.querySelectorAll("textarea, input");
+    inputs.forEach((input) => {
+      input.value = input.value.replace(/apple/g, "pear");
+      const event = new Event("input", {
+        bubbles: true,
+        cancelable: true,
+      });
+      input.dispatchEvent(event);
     });
-    input.dispatchEvent(event);
   });
-});
+}

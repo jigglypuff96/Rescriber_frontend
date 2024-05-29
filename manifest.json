@@ -3,7 +3,7 @@
   "name": "PII Auto Reviser",
   "version": "1.0",
   "description": "An extension that revises PII.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "storage", "scripting"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"

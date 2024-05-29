@@ -1,29 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Auto Reviser</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Extension Toggle</title>
     <style>
-      /* Add your CSS styling here */
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      #toggleButton {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #toggleButton.off {
+        background-color: #dc3545;
+      }
     </style>
   </head>
   <body>
-    <h1>Auto Reviser Settings</h1>
-    <form id="reviserForm">
-      <input
-        type="text"
-        id="wordToReplace"
-        placeholder="Word to replace"
-        required
-      />
-      <input
-        type="text"
-        id="replacementWord"
-        placeholder="Replacement word"
-        required
-      />
-      <button type="submit">Add</button>
-    </form>
-    <div id="wordList"></div>
+    <h1>Auto Reviser</h1>
+    <button id="toggleButton">Disable</button>
+
     <script src="popup.js"></script>
   </body>
 </html>
