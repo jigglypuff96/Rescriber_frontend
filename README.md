@@ -5,5 +5,10 @@
 5. Click "Load Unpackaged"
 6. Select the downloaded folder
 7. Goes to ChatGPT and try it out!
-https://github.com/jigglypuff96/inline_pii_replacer/assets/49411569/7bd068f6-f72c-467b-aab3-7362b239bdb7
+
+
+
+
+
+https://github.com/jigglypuff96/inline_pii_replacer/assets/49411569/71fb2c26-6910-4f25-b400-995fa7c571df
 
