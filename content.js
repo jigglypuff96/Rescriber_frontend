@@ -19,7 +19,8 @@ chrome.runtime.onMessage.addListener(async function (
   if (request.action === "detect") {
     const userMessage = getUserInputText();
     const { getResponse } = await import(chrome.runtime.getURL("openai.js"));
-    detectedEntities = await getResponse(userMessage);
+    const entities = await getResponse(userMessage);
+    detectedEntities = processEntities(entities);
     detectWords(userMessage, detectedEntities);
   } else if (request.action === "replace") {
     replaceWords(detectedEntities);
@@ -29,6 +30,21 @@ chrome.runtime.onMessage.addListener(async function (
 function getUserInputText() {
   const input = document.querySelector("textarea, input[type='text']");
   return input ? input.value : "";
+}
+
+function processEntities(entities) {
+  const entityCount = {};
+  return entities.map((entity) => {
+    if (!entityCount[entity.entity_type]) {
+      entityCount[entity.entity_type] = 0;
+    }
+    entityCount[entity.entity_type]++;
+    const count = entityCount[entity.entity_type];
+    return {
+      ...entity,
+      entity_type: `${entity.entity_type}${count > 1 ? count : 1}`,
+    };
+  });
 }
 
 function detectWords(userMessage, entities) {
