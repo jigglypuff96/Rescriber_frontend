@@ -1,9 +1,9 @@
-// content.js
-
 let enabled = true; // Default state
 let detectedEntities = [];
+let tempPiiMappings = {}; // Temporary storage for PII mappings in no-url scenario
+let piiMappings = {};
 
-console.log("Content script loaded");
+console.log("Content script loaded!");
 
 // Listen for messages from the popup
 chrome.runtime.onMessage.addListener(async function (
@@ -23,7 +23,8 @@ chrome.runtime.onMessage.addListener(async function (
     detectedEntities = processEntities(entities);
     detectWords(userMessage, detectedEntities);
   } else if (request.action === "replace") {
-    replaceWords(detectedEntities);
+    const userMessage = getUserInputText();
+    replaceWords(userMessage, detectedEntities);
   }
 });
 
@@ -66,21 +67,36 @@ function detectWords(userMessage, entities) {
   });
 }
 
-function replaceWords(entities) {
+function replaceWords(userMessage, entities) {
   const textareas = document.querySelectorAll("textarea");
   const inputs = document.querySelectorAll("input[type='text']");
+
+  const activeConversationId = getActiveConversationId() || "no-url";
+  console.log("Current active conversation ID:", activeConversationId);
+
+  entities.forEach((entity) => {
+    if (!tempPiiMappings[activeConversationId]) {
+      tempPiiMappings[activeConversationId] = {};
+    }
+    tempPiiMappings[activeConversationId][entity.entity_type] = entity.text;
+  });
+
+  // Save tempPiiMappings to storage
+  chrome.storage.local.set({ tempPiiMappings }, () => {
+    console.log("Temporary PII mappings saved:", tempPiiMappings);
+  });
 
   textareas.forEach((textarea) => {
     entities.forEach((entity) => {
       const regex = new RegExp(`(${entity.text})`, "gi");
-      textarea.value = textarea.value.replace(regex, `[${entity.entity_type}]`);
+      textarea.value = textarea.value.replace(regex, `{${entity.entity_type}}`);
     });
   });
 
   inputs.forEach((input) => {
     entities.forEach((entity) => {
       const regex = new RegExp(`(${entity.text})`, "gi");
-      input.value = input.value.replace(regex, `[${entity.entity_type}]`);
+      input.value = input.value.replace(regex, `{${entity.entity_type}}`);
     });
   });
 
@@ -129,3 +145,131 @@ function displayHighlight(target, highlightedValue) {
     tooltip.remove();
   });
 }
+
+function replaceTextInElement(element) {
+  const activeConversationId = getActiveConversationId();
+  const storageKey =
+    activeConversationId !== "no-url"
+      ? `piiMappings_${activeConversationId}`
+      : null;
+
+  chrome.storage.local.get(null, (data) => {
+    const piiMappings =
+      activeConversationId !== "no-url"
+        ? { ...data[storageKey], ...tempPiiMappings["no-url"] }
+        : tempPiiMappings["no-url"] || {};
+
+    // Recursive function to replace text in all child nodes
+    function replaceTextRecursively(node) {
+      node.childNodes.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          for (let [placeholder, pii] of Object.entries(piiMappings)) {
+            const regexCurly = new RegExp(`\\{${placeholder}\\}`, "g");
+            const regexPlain = new RegExp(placeholder, "g");
+            const originalText = child.textContent;
+            child.textContent = child.textContent.replace(regexCurly, pii);
+            child.textContent = child.textContent.replace(regexPlain, pii);
+            if (originalText !== child.textContent) {
+              console.log(
+                `Replaced text in element: ${originalText} -> ${child.textContent}`
+              );
+            }
+          }
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          replaceTextRecursively(child);
+        }
+      });
+    }
+
+    // Start the recursive replacement
+    replaceTextRecursively(element);
+  });
+}
+
+function checkMessageRenderedAndReplace(element) {
+  const interval = setInterval(() => {
+    const starButton = element?.parentElement?.parentElement
+      ?.querySelector('button[aria-haspopup="menu"]')
+      ?.querySelector("div .icon-md");
+
+    if (starButton) {
+      console.log("Message rendering complete, performing text replacement");
+      replaceTextInElement(element);
+
+      const activeConversationId = getActiveConversationId();
+      if (activeConversationId !== "no-url") {
+        // Move temporary mappings to actual mappings once the conversation ID is available
+        chrome.storage.local.get(
+          `piiMappings_${activeConversationId}`,
+          (data) => {
+            piiMappings[activeConversationId] = {
+              ...data[`piiMappings_${activeConversationId}`],
+              ...tempPiiMappings["no-url"],
+            };
+            chrome.storage.local.set(
+              {
+                [`piiMappings_${activeConversationId}`]:
+                  piiMappings[activeConversationId],
+              },
+              () => {
+                console.log(
+                  "PII mappings saved for conversation:",
+                  activeConversationId
+                );
+                // Clear temporary mappings
+                delete tempPiiMappings["no-url"];
+                chrome.storage.local.set({ tempPiiMappings }, () => {
+                  console.log(
+                    "Temporary PII mappings updated:",
+                    tempPiiMappings
+                  );
+                });
+              }
+            );
+          }
+        );
+      }
+      clearInterval(interval);
+    }
+  }, 100); // Check every 100ms
+}
+
+function getActiveConversationId() {
+  const url = window.location.href;
+  const conversationIdMatch = url.match(/\/c\/([a-z0-9-]+)/);
+  return conversationIdMatch ? conversationIdMatch[1] : "no-url";
+}
+
+// Improved mutation observer to handle new messages dynamically
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    mutation.addedNodes.forEach((node) => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        if (node.matches('[data-message-author-role="assistant"]')) {
+          console.log("New assistant message detected:", node); // Log detection
+          checkMessageRenderedAndReplace(node);
+        }
+        node
+          .querySelectorAll('[data-message-author-role="assistant"]')
+          .forEach((el) => {
+            console.log("New nested assistant message detected:", el); // Log nested detection
+            checkMessageRenderedAndReplace(el);
+          });
+      }
+    });
+  });
+});
+
+observer.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
+
+// Apply replacements on page load
+window.addEventListener("load", () => {
+  document
+    .querySelectorAll('[data-message-author-role="assistant"]')
+    .forEach((el) => {
+      checkMessageRenderedAndReplace(el);
+    });
+});
