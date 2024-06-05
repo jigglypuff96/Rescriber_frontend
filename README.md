@@ -9,13 +9,5 @@
 9. Enter your OpenAI api key ![image](https://github.com/jigglypuff96/inline_pii_replacer/assets/49411569/2cde1709-fd9a-4bf2-a226-8df8e56e375c)
 10. Goes to ChatGPT and try it out!
 
-
-
-
-
-https://github.com/jigglypuff96/inline_pii_replacer/assets/49411569/71fb2c26-6910-4f25-b400-995fa7c571df
-
-Replacing placeholders back to PII for the first turn of the conversation
-https://github.com/jigglypuff96/inline_pii_replacer/assets/49411569/f827af9d-6f1a-4823-aeb5-4cf41b5215b9
-
+https://github.com/jigglypuff96/inline_pii_replacer/assets/49411569/fcf3a176-baf0-4eee-b01d-790751406ebc
 
