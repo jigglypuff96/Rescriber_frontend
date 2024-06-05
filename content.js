@@ -85,19 +85,11 @@ function replaceWords(userMessage, entities) {
   }
 
   entities.forEach((entity) => {
-    const entityType = entity.entity_type.replace(/[0-9]/g, "");
-    if (!entityCounts[activeConversationId][entityType]) {
-      entityCounts[activeConversationId][entityType] = 1;
-    }
-
-    const placeholder = `${entityType}${entityCounts[activeConversationId][entityType]}`;
-
     if (!tempPiiMappings[activeConversationId]) {
       tempPiiMappings[activeConversationId] = {};
     }
-    if (!tempPiiMappings[activeConversationId][placeholder]) {
-      tempPiiMappings[activeConversationId][placeholder] = entity.text;
-      // entityCounts[activeConversationId][entityType]++;
+    if (!tempPiiMappings[activeConversationId][entity.entity_type]) {
+      tempPiiMappings[activeConversationId][entity.entity_type] = entity.text;
     }
   });
 
