@@ -2,6 +2,7 @@ let enabled = true; // Default state
 let detectedEntities = [];
 let tempPiiMappings = {}; // Temporary storage for PII mappings in no-url scenario
 let piiMappings = {};
+let entityCounts = {}; // To track counts of each entity type
 
 console.log("Content script loaded!");
 
@@ -34,16 +35,21 @@ function getUserInputText() {
 }
 
 function processEntities(entities) {
-  const entityCount = {};
+  const activeConversationId = getActiveConversationId() || "no-url";
+  if (!entityCounts[activeConversationId]) {
+    entityCounts[activeConversationId] = {};
+  }
   return entities.map((entity) => {
-    if (!entityCount[entity.entity_type]) {
-      entityCount[entity.entity_type] = 0;
+    const entityType = entity.entity_type.replace(/[0-9]/g, "");
+    if (!entityCounts[activeConversationId][entityType]) {
+      entityCounts[activeConversationId][entityType] = 1;
+    } else {
+      entityCounts[activeConversationId][entityType]++;
     }
-    entityCount[entity.entity_type]++;
-    const count = entityCount[entity.entity_type];
+
     return {
       ...entity,
-      entity_type: `${entity.entity_type}${count > 1 ? count : 1}`,
+      entity_type: `${entityType}${entityCounts[activeConversationId][entityType]}`,
     };
   });
 }
@@ -74,17 +80,28 @@ function replaceWords(userMessage, entities) {
   const activeConversationId = getActiveConversationId() || "no-url";
   console.log("Current active conversation ID:", activeConversationId);
 
+  if (!entityCounts[activeConversationId]) {
+    entityCounts[activeConversationId] = {};
+  }
+
   entities.forEach((entity) => {
+    const entityType = entity.entity_type.replace(/[0-9]/g, "");
+    if (!entityCounts[activeConversationId][entityType]) {
+      entityCounts[activeConversationId][entityType] = 1;
+    }
+
+    const placeholder = `${entityType}${entityCounts[activeConversationId][entityType]}`;
+
     if (!tempPiiMappings[activeConversationId]) {
       tempPiiMappings[activeConversationId] = {};
     }
-    tempPiiMappings[activeConversationId][entity.entity_type] = entity.text;
+    if (!tempPiiMappings[activeConversationId][placeholder]) {
+      tempPiiMappings[activeConversationId][placeholder] = entity.text;
+      // entityCounts[activeConversationId][entityType]++;
+    }
   });
 
-  // Save tempPiiMappings to storage
-  chrome.storage.local.set({ tempPiiMappings }, () => {
-    console.log("Temporary PII mappings saved:", tempPiiMappings);
-  });
+  console.log("Temporary PII mappings updated:", tempPiiMappings);
 
   textareas.forEach((textarea) => {
     entities.forEach((entity) => {
@@ -156,7 +173,11 @@ function replaceTextInElement(element) {
   chrome.storage.local.get(null, (data) => {
     const piiMappings =
       activeConversationId !== "no-url"
-        ? { ...data[storageKey], ...tempPiiMappings["no-url"] }
+        ? {
+            ...data[storageKey],
+            ...tempPiiMappings[`${activeConversationId}`],
+            ...tempPiiMappings["no-url"],
+          }
         : tempPiiMappings["no-url"] || {};
 
     // Recursive function to replace text in all child nodes
@@ -204,6 +225,7 @@ function checkMessageRenderedAndReplace(element) {
           (data) => {
             piiMappings[activeConversationId] = {
               ...data[`piiMappings_${activeConversationId}`],
+              ...tempPiiMappings[`${activeConversationId}`],
               ...tempPiiMappings["no-url"],
             };
             chrome.storage.local.set(
@@ -218,6 +240,7 @@ function checkMessageRenderedAndReplace(element) {
                 );
                 // Clear temporary mappings
                 delete tempPiiMappings["no-url"];
+                delete tempPiiMappings[`${activeConversationId}`];
                 chrome.storage.local.set({ tempPiiMappings }, () => {
                   console.log(
                     "Temporary PII mappings updated:",
@@ -226,6 +249,21 @@ function checkMessageRenderedAndReplace(element) {
                 });
               }
             );
+
+            // Save entityCounts to chrome storage
+            chrome.storage.local.get("entityCounts", (data) => {
+              const counts = data.entityCounts || {};
+              counts[activeConversationId] = {
+                ...counts[activeConversationId],
+                ...entityCounts[activeConversationId],
+                ...entityCounts["no-url"],
+              };
+              delete entityCounts["no-url"];
+              entityCounts[activeConversationId] = counts[activeConversationId];
+              chrome.storage.local.set({ entityCounts: counts }, () => {
+                console.log("Entity counts updated:", counts);
+              });
+            });
           }
         );
       }
@@ -263,6 +301,12 @@ const observer = new MutationObserver((mutations) => {
 observer.observe(document.body, {
   childList: true,
   subtree: true,
+});
+
+// Load entity counts from storage
+chrome.storage.local.get("entityCounts", (data) => {
+  entityCounts = data.entityCounts || {};
+  console.log("Loaded entity counts:", entityCounts);
 });
 
 // Apply replacements on page load
