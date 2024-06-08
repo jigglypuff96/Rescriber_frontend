@@ -19,9 +19,15 @@ chrome.runtime.onMessage.addListener(async function (
   }
   if (request.action === "detect") {
     const userMessage = getUserInputText();
-    const { getResponse } = await import(chrome.runtime.getURL("openai.js"));
-    const entities = await getResponse(userMessage);
-    detectedEntities = processEntities(entities);
+    const { getResponseDetect, getResponseCluster } = await import(
+      chrome.runtime.getURL("openai.js")
+    );
+    const entities = await getResponseDetect(userMessage);
+    const clusterMessage = generateUserMessageCluster(userMessage, entities);
+    const clustersResponse = await getResponseCluster(clusterMessage); // new line
+    const clusters = JSON.parse(clustersResponse);
+    const simplifiedClusters = simplifyClusters(clusters);
+    detectedEntities = processEntities(entities, simplifiedClusters);
     detectWords(userMessage, detectedEntities);
   } else if (request.action === "replace") {
     const userMessage = getUserInputText();
@@ -34,24 +40,95 @@ function getUserInputText() {
   return input ? input.value : "";
 }
 
-function processEntities(entities) {
+function generateUserMessageCluster(userMessage, entities) {
+  let clusterMessage = `<message>${userMessage}</message>`;
+  entities.forEach(function (value, i) {
+    clusterMessage += `<pii${i + 1}>${value.text}</pii${i + 1}>`;
+  });
+  return clusterMessage;
+}
+
+function simplifyClusters(clusters) {
+  const groupedClusters = {};
+
+  function mergeClusters(key, visited = new Set()) {
+    if (visited.has(key)) return groupedClusters[key];
+    visited.add(key);
+
+    if (!groupedClusters[key]) {
+      groupedClusters[key] = new Set(clusters[key] || []);
+    }
+
+    clusters[key]?.forEach((value) => {
+      if (value !== key) {
+        groupedClusters[key].add(value);
+        const nestedCluster = mergeClusters(value, visited);
+        nestedCluster.forEach((nestedValue) => {
+          groupedClusters[key].add(nestedValue);
+        });
+      }
+    });
+
+    return groupedClusters[key];
+  }
+
+  Object.keys(clusters).forEach((key) => {
+    mergeClusters(key);
+  });
+
+  // Merge sets with overlapping values
+  const mergedClusters = [];
+  const seen = new Set();
+
+  Object.keys(groupedClusters).forEach((key) => {
+    if (!seen.has(key)) {
+      const cluster = groupedClusters[key];
+      cluster.forEach((value) => seen.add(value));
+      mergedClusters.push(Array.from(cluster));
+    }
+  });
+
+  return mergedClusters;
+}
+
+function processEntities(entities, simplifiedClusters) {
   const activeConversationId = getActiveConversationId() || "no-url";
   if (!entityCounts[activeConversationId]) {
     entityCounts[activeConversationId] = {};
   }
-  return entities.map((entity) => {
-    const entityType = entity.entity_type.replace(/[0-9]/g, "");
-    if (!entityCounts[activeConversationId][entityType]) {
-      entityCounts[activeConversationId][entityType] = 1;
-    } else {
-      entityCounts[activeConversationId][entityType]++;
-    }
 
-    return {
-      ...entity,
-      entity_type: `${entityType}${entityCounts[activeConversationId][entityType]}`,
-    };
+  const localEntityCounts = { ...entityCounts[activeConversationId] };
+  const placeholderMapping = {};
+
+  simplifiedClusters.forEach((cluster) => {
+    const entityType = entities.find((entity) =>
+      cluster.includes(entity.text)
+    )?.entity_type;
+    if (entityType) {
+      if (!localEntityCounts[entityType]) {
+        localEntityCounts[entityType] = 1;
+      } else {
+        localEntityCounts[entityType]++;
+      }
+
+      const placeholder = `${entityType}${localEntityCounts[entityType]}`;
+
+      cluster.forEach((item) => {
+        placeholderMapping[item] = placeholder;
+      });
+    }
   });
+
+  entities.forEach((entity) => {
+    entity.entity_type = placeholderMapping[entity.text] || entity.entity_type;
+  });
+
+  entityCounts[activeConversationId] = localEntityCounts;
+
+  console.log("Entity counts updated:", entityCounts);
+  console.log("Placeholder mapping updated:", placeholderMapping);
+
+  return entities;
 }
 
 function detectWords(userMessage, entities) {
