@@ -26,8 +26,11 @@ chrome.runtime.onMessage.addListener(async function (
     const clusterMessage = generateUserMessageCluster(userMessage, entities);
     const clustersResponse = await getResponseCluster(clusterMessage); // new line
     const clusters = JSON.parse(clustersResponse);
-    const simplifiedClusters = simplifyClusters(clusters);
-    detectedEntities = processEntities(entities, simplifiedClusters);
+    const { finalClusters, associatedGroups } = simplifyClustersWithTypes(
+      clusters,
+      entities
+    );
+    detectedEntities = processEntities(entities, finalClusters);
     detectWords(userMessage, detectedEntities);
   } else if (request.action === "replace") {
     const userMessage = getUserInputText();
@@ -48,8 +51,9 @@ function generateUserMessageCluster(userMessage, entities) {
   return clusterMessage;
 }
 
-function simplifyClusters(clusters) {
+function simplifyClustersWithTypes(clusters, entities) {
   const groupedClusters = {};
+  const associatedGroups = [];
 
   function mergeClusters(key, visited = new Set()) {
     if (visited.has(key)) return groupedClusters[key];
@@ -76,7 +80,7 @@ function simplifyClusters(clusters) {
     mergeClusters(key);
   });
 
-  // Merge sets with overlapping values
+  // Merge sets with overlapping values and respect entity types
   const mergedClusters = [];
   const seen = new Set();
 
@@ -88,10 +92,37 @@ function simplifyClusters(clusters) {
     }
   });
 
-  return mergedClusters;
+  const finalClusters = [];
+  mergedClusters.forEach((cluster) => {
+    const typeMap = {};
+    const associatedGroup = new Set();
+
+    cluster.forEach((item) => {
+      const entityType = entities
+        .find((entity) => entity.text === item)
+        ?.entity_type.replace(/[0-9]/g, "");
+      if (entityType) {
+        if (!typeMap[entityType]) {
+          typeMap[entityType] = [];
+        }
+        typeMap[entityType].push(item);
+      }
+      associatedGroup.add(item);
+    });
+
+    Object.keys(typeMap).forEach((type) => {
+      finalClusters.push(typeMap[type]);
+    });
+
+    if (Object.keys(typeMap).length > 1) {
+      associatedGroups.push(Array.from(associatedGroup));
+    }
+  });
+
+  return { finalClusters, associatedGroups };
 }
 
-function processEntities(entities, simplifiedClusters) {
+function processEntities(entities, finalClusters) {
   const activeConversationId = getActiveConversationId() || "no-url";
   if (!entityCounts[activeConversationId]) {
     entityCounts[activeConversationId] = {};
@@ -100,10 +131,10 @@ function processEntities(entities, simplifiedClusters) {
   const localEntityCounts = { ...entityCounts[activeConversationId] };
   const placeholderMapping = {};
 
-  simplifiedClusters.forEach((cluster) => {
-    const entityType = entities.find((entity) =>
-      cluster.includes(entity.text)
-    )?.entity_type;
+  finalClusters.forEach((cluster) => {
+    const entityType = entities
+      .find((entity) => cluster.includes(entity.text))
+      ?.entity_type.replace(/[0-9]/g, "");
     if (entityType) {
       if (!localEntityCounts[entityType]) {
         localEntityCounts[entityType] = 1;
@@ -124,9 +155,6 @@ function processEntities(entities, simplifiedClusters) {
   });
 
   entityCounts[activeConversationId] = localEntityCounts;
-
-  console.log("Entity counts updated:", entityCounts);
-  console.log("Placeholder mapping updated:", placeholderMapping);
 
   return entities;
 }
