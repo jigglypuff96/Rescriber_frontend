@@ -12,7 +12,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "css": ["style.css"]
+      "css": ["style.css", "ui.css"]
     }
   ],
   "action": {
@@ -22,7 +22,7 @@
   "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["openai.js"],
+      "resources": ["openai.js", "ui.js", "ui.css"],
       "matches": ["<all_urls>"]
     }
   ]

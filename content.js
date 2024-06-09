@@ -31,12 +31,19 @@ chrome.runtime.onMessage.addListener(async function (
       entities
     );
     detectedEntities = processEntities(entities, finalClusters);
+    const { updatePiiList } = await loadUIFunctions();
     detectWords(userMessage, detectedEntities);
+    updatePiiList(detectedEntities);
   } else if (request.action === "replace") {
     const userMessage = getUserInputText();
     replaceWords(userMessage, detectedEntities);
   }
 });
+
+async function loadUIFunctions() {
+  const { updatePiiList } = await import(chrome.runtime.getURL("ui.js"));
+  return { updatePiiList };
+}
 
 function getUserInputText() {
   const input = document.querySelector("textarea, input[type='text']");
