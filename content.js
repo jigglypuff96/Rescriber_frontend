@@ -240,6 +240,9 @@ function displayHighlight(target, highlightedValue) {
   const rect = target.getBoundingClientRect();
   tooltip.style.left = `${rect.left + window.scrollX}px`;
 
+  // Set max-width to the width of the input box
+  tooltip.style.maxWidth = `${rect.width}px`;
+
   // Add the tooltip to measure its height
   document.body.appendChild(tooltip);
 
