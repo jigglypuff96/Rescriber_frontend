@@ -60,3 +60,14 @@
 #replace-all:hover {
   background-color: #218838;
 }
+
+.replace-btn {
+  margin-left: 10px;
+}
+
+#replace-all-btn,
+#highlight-btn {
+  margin-top: 10px;
+  display: block;
+  width: 100%;
+}
