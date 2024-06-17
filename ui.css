@@ -1,6 +1,6 @@
 #pii-replacement-panel {
   position: fixed;
-  bottom: 20px;
+  bottom: 50px;
   right: 20px;
   width: 300px;
   background-color: #fff;
@@ -72,106 +72,52 @@
   width: 100%;
 }
 
-/* #detect-next-to-input-button {
+#detect-next-to-input-button {
   position: absolute;
   bottom: 10px;
-  right: 20px;
+  right: 45px;
   background: none;
   border: none;
   outline: none;
   cursor: pointer;
-} */
-/* 
-.detect-circle {
-  width: 8px;
-  height: 8px;
-  background-color: green;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-} */
-/* 
-#detect-next-to-input-button:hover .detect-circle {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-} */
-
-/* #detect-next-to-input-button:hover .detect-circle::after {
-  content: "Detect";
-  color: white;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 12px;
-  font-weight: bold;
-} */
-
-/* Styles for the detect button */
-#detect-next-to-input-button {
-  position: absolute;
-  bottom: 10px;
-  right: 20px;
-  background: green;
-  border: none;
-  outline: none;
-  cursor: pointer;
 }
 
-.detect-circle {
-  width: 8px;
-  height: 8px;
-  background-color: green;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.detect-circle .larger-circle {
+.detect-circle,
+.detected-circle,
+.loader {
   width: 30px;
   height: 30px;
-  background-color: green;
-  border-radius: 50%;
-  transition: all 0.3s ease;
-}
-
-.detected-circle {
-  width: 30px;
-  height: 30px;
-  background-color: green;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.detect-circle {
+  background-color: green;
+  transition: all 0.3s ease;
+}
+
+.detected-circle {
+  background-color: green;
   color: white;
   font-size: 20px;
   font-weight: bold;
 }
+
 .loader {
-  border: 16px solid #f3f3f3;
-  border-radius: 50%;
-  border-top: 16px solid #4caf50;
-  width: 120px;
-  height: 120px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4caf50;
   -webkit-animation: spin 2s linear infinite; /* Safari */
   animation: spin 2s linear infinite;
 }
 
-/* Safari */
 @-webkit-keyframes spin {
   0% {
     -webkit-transform: rotate(0deg);
   }
   100% {
     -webkit-transform: rotate(360deg);
-  }
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
   }
 }
 

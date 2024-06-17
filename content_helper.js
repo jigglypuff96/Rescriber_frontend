@@ -210,14 +210,23 @@ window.helper = {
   handleDetectAndHighlight: async function () {
     const { userMessage, detectedEntities } = this.handleDetect();
     this.highlightWords(userMessage, detectedEntities);
+    await this.showReplacementPanel(detectedEntities);
+  },
+
+  highlightDetectedWords: function () {
+    this.highlightWords(this.currentUserMessage, this.currentEntities);
+  },
+
+  showReplacementPanel: async function (detectedEntities) {
     const { createPIIReplacementPanel } = await import(
       chrome.runtime.getURL("replacePanel.js")
     );
     createPIIReplacementPanel(detectedEntities);
   },
 
-  highlightDetectedWords: function () {
+  highlightDetectedAndShowReplacementPanel: function () {
     this.highlightWords(this.currentUserMessage, this.currentEntities);
+    this.showReplacementPanel(this.currentEntities);
   },
 
   highlightWords: function (userMessage, entities) {
@@ -278,9 +287,9 @@ window.helper = {
       }px`;
     }
 
-    target.addEventListener("blur", () => {
-      tooltip.remove();
-    });
+    // target.addEventListener("blur", () => {
+    //   tooltip.remove();
+    // });
 
     target.addEventListener("input", () => {
       tooltip.remove();

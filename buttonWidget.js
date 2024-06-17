@@ -1,5 +1,6 @@
 export function initializeButton() {
   observeSendButton();
+  console.log("finished initalizingButton");
 }
 
 function observeSendButton() {
@@ -45,14 +46,6 @@ function addDetectButton() {
     detectButton.id = "detect-next-to-input-button";
     detectButton.className = "detect-next-to-input-button";
     detectButton.innerHTML = `<span class="detect-circle"></span>`;
-
-    // Ensure the button doesn't inherit unwanted styles
-    detectButton.style.background = "green";
-    detectButton.style.border = "none";
-    detectButton.style.padding = "5px";
-    detectButton.style.borderRadius = "50%";
-    detectButton.style.cursor = "pointer";
-    detectButton.style.marginLeft = "10px"; // Adjust as needed
 
     // Append the detect button next to the send button
     document.body.appendChild(detectButton);

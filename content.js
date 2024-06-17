@@ -1,8 +1,5 @@
 let enabled;
 let previousEnabled;
-// chrome.storage.sync.get(["enabled"], function (result) {
-//   enabled = result.enabled !== undefined ? result.enabled : true;
-// });
 let detectedEntities = [];
 let piiMappings = {};
 let entityCounts = {}; // To track counts of each entity type
@@ -23,10 +20,11 @@ function checkForConversationChange() {
     newConversationId !== currentConversationId ||
     enabled !== previousEnabled
   ) {
+    previousEnabled = enabled;
     currentConversationId = newConversationId;
     removeTooltipAndPanel();
-    document.removeEventListener("input", this.typingHandler);
-    document.addEventListener("input", this.typingHandler);
+    document.removeEventListener("input", typingHandler);
+    document.addEventListener("input", typingHandler);
     window.helper.getEnabledStatus();
     enabled = window.helper.enabled;
   }
@@ -37,19 +35,17 @@ function typingHandler(e) {
   if (input.contains(e.target)) {
     clearTimeout(typingTimer);
     typingTimer = setTimeout(doneTyping, doneTypingInterval);
-    // showLoadingIndicator();
   }
 }
 
 async function doneTyping() {
   showLoadingIndicator();
   await window.helper.handleDetect();
-  this.updateDetectButton();
+  updateDetectButton();
 }
 
 function showLoadingIndicator() {
   const detectButton = document.getElementById("detect-next-to-input-button");
-  detectButton.classList.add("larger-cicle");
   if (detectButton) {
     detectButton.innerHTML = `<span class="loader"></span>`;
   }
@@ -61,7 +57,7 @@ function updateDetectButton() {
     detectButton.innerHTML = `<span class="detected-circle">O</span>`;
     detectButton.addEventListener("click", () => {
       if (detectButton.innerText === "O") {
-        window.helper.highlightDetectedWords();
+        window.helper.highlightDetectedAndShowReplacementPanel();
       }
     });
   }
@@ -142,6 +138,7 @@ async function initialize() {
   const { initializeButton } = await import(
     chrome.runtime.getURL("buttonWidget.js")
   );
+  console.log("calling initialize button");
   initializeButton();
 }
 
