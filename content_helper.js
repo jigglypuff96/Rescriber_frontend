@@ -1,11 +1,30 @@
 window.helper = {
-  enabled: true,
+  enabled: undefined,
   detectedEntities: [],
   tempPlaceholder2PiiMappings: {},
   pii2PlaceholderMappings: {},
   piiMappings: {},
   entityCounts: {},
-  entities: [],
+  currentEntities: [],
+  currentUserMessage: "",
+
+  getEnabledStatus: async function () {
+    this.enabled = await new Promise((resolve, reject) => {
+      chrome.storage.sync.get(["enabled"], function (result) {
+        if (chrome.runtime.lastError) {
+          return reject(chrome.runtime.lastError);
+        }
+        resolve(result.enabled !== undefined ? result.enabled : true);
+      });
+    });
+  },
+
+  setEnabledStatus: async function (newEnabledState) {
+    this.enabled = newEnabledState;
+    // chrome.storage.sync.set({ enabled: newEnabledState }, function () {
+    //     this.enabled = newEnabledState
+    //   });
+  },
 
   getUserInputText: function () {
     const input = document.querySelector("textarea, input[type='text']");
@@ -14,9 +33,13 @@ window.helper = {
 
   generateUserMessageCluster: function (userMessage, entities) {
     let clusterMessage = `<message>${userMessage}</message>`;
-    entities.forEach(function (value, i) {
-      clusterMessage += `<pii${i + 1}>${value.text}</pii${i + 1}>`;
-    });
+    if (entities.length) {
+      entities.forEach(function (value, i) {
+        clusterMessage += `<pii${i + 1}>${value.text}</pii${i + 1}>`;
+      });
+    } else {
+      return undefined;
+    }
     return clusterMessage;
   },
 
@@ -157,8 +180,48 @@ window.helper = {
     return entities;
   },
 
-  detectWords: function (userMessage, entities) {
-    if (!this.enabled) return;
+  handleDetect: async function () {
+    const userMessage = this.getUserInputText();
+    this.currentUserMessage = userMessage;
+    const { getResponseDetect, getResponseCluster } = await import(
+      chrome.runtime.getURL("openai.js")
+    );
+    const entities = await getResponseDetect(userMessage);
+    const clusterMessage = this.generateUserMessageCluster(
+      userMessage,
+      entities
+    );
+    let finalClusters = [];
+    if (clusterMessage) {
+      const clustersResponse = await getResponseCluster(clusterMessage);
+      const clusters = JSON.parse(clustersResponse);
+      const { finalClusters, associatedGroups } =
+        this.simplifyClustersWithTypes(clusters, entities);
+      const detectedEntities = this.processEntities(entities, finalClusters);
+
+      this.currentEntities = detectedEntities;
+      return { userMessage, detectedEntities };
+    }
+    const detectedEntities = this.processEntities(entities, finalClusters);
+    this.currentEntities = detectedEntities;
+    return { userMessage, detectedEntities };
+  },
+
+  handleDetectAndHighlight: async function () {
+    const { userMessage, detectedEntities } = this.handleDetect();
+    this.highlightWords(userMessage, detectedEntities);
+    const { createPIIReplacementPanel } = await import(
+      chrome.runtime.getURL("replacePanel.js")
+    );
+    createPIIReplacementPanel(detectedEntities);
+  },
+
+  highlightDetectedWords: function () {
+    this.highlightWords(this.currentUserMessage, this.currentEntities);
+  },
+
+  highlightWords: function (userMessage, entities) {
+    if (!this.enabled || !userMessage || !entities) return;
 
     const inputs = document.querySelectorAll("textarea, input[type='text']");
     inputs.forEach((input) => {
@@ -177,11 +240,13 @@ window.helper = {
   },
 
   displayHighlight: function (target, highlightedValue) {
-    const existingTooltips = document.querySelectorAll(".tooltip");
+    const existingTooltips = document.querySelectorAll(
+      ".pii-highlight-tooltip"
+    );
     existingTooltips.forEach((existingTooltip) => existingTooltip.remove());
 
     const tooltip = document.createElement("div");
-    tooltip.classList.add("tooltip");
+    tooltip.classList.add("pii-highlight-tooltip");
     tooltip.innerHTML = highlightedValue;
 
     document.body.appendChild(tooltip);
@@ -271,7 +336,9 @@ window.helper = {
     });
 
     // Remove tooltips after replacement
-    const existingTooltips = document.querySelectorAll(".tooltip");
+    const existingTooltips = document.querySelectorAll(
+      ".pii-highlight-tooltip"
+    );
     existingTooltips.forEach((existingTooltip) => existingTooltip.remove());
   },
 

@@ -5,7 +5,7 @@
   color: black;
 }
 
-.tooltip {
+.pii-highlight-tooltip {
   color: black;
   position: absolute;
   background-color: white;

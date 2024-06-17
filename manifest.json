@@ -11,7 +11,13 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content_helper.js", "content.js"],
+      "js": [
+        "content_helper.js",
+        "content.js",
+        "openai.js",
+        "replacePanel.js",
+        "buttonWidget.js"
+      ],
       "css": ["style.css", "ui.css"]
     }
   ],
@@ -22,7 +28,12 @@
   "options_page": "options.html",
   "web_accessible_resources": [
     {
-      "resources": ["openai.js", "ui.js", "ui.css"],
+      "resources": [
+        "openai.js",
+        "replacePanel.js",
+        "ui.css",
+        "buttonWidget.js"
+      ],
       "matches": ["<all_urls>"]
     }
   ]

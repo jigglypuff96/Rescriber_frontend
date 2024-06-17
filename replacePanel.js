@@ -40,6 +40,6 @@ export function createPIIReplacementPanel(detectedEntities) {
 
   document.getElementById("highlight-btn").addEventListener("click", () => {
     const userMessage = window.helper.getUserInputText();
-    window.helper.detectWords(userMessage, detectedEntities);
+    window.helper.highlightWords(userMessage, detectedEntities);
   });
 }

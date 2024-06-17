@@ -1,9 +1,85 @@
-let enabled = true; // Default state
+let enabled;
+let previousEnabled;
+// chrome.storage.sync.get(["enabled"], function (result) {
+//   enabled = result.enabled !== undefined ? result.enabled : true;
+// });
 let detectedEntities = [];
 let piiMappings = {};
 let entityCounts = {}; // To track counts of each entity type
 
+let currentConversationId = window.helper.getActiveConversationId();
+let typingTimer;
+const doneTypingInterval = 1000;
+
 console.log("Content script loaded!");
+
+function checkForConversationChange() {
+  if (!enabled) {
+    previousEnabled = enabled;
+    return;
+  }
+  const newConversationId = window.helper.getActiveConversationId();
+  if (
+    newConversationId !== currentConversationId ||
+    enabled !== previousEnabled
+  ) {
+    currentConversationId = newConversationId;
+    removeTooltipAndPanel();
+    document.removeEventListener("input", this.typingHandler);
+    document.addEventListener("input", this.typingHandler);
+    window.helper.getEnabledStatus();
+    enabled = window.helper.enabled;
+  }
+}
+
+function typingHandler(e) {
+  const input = document.querySelector("textarea, input[type='text']");
+  if (input.contains(e.target)) {
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(doneTyping, doneTypingInterval);
+    // showLoadingIndicator();
+  }
+}
+
+async function doneTyping() {
+  showLoadingIndicator();
+  await window.helper.handleDetect();
+  this.updateDetectButton();
+}
+
+function showLoadingIndicator() {
+  const detectButton = document.getElementById("detect-next-to-input-button");
+  detectButton.classList.add("larger-cicle");
+  if (detectButton) {
+    detectButton.innerHTML = `<span class="loader"></span>`;
+  }
+}
+
+function updateDetectButton() {
+  const detectButton = document.getElementById("detect-next-to-input-button");
+  if (detectButton) {
+    detectButton.innerHTML = `<span class="detected-circle">O</span>`;
+    detectButton.addEventListener("click", () => {
+      if (detectButton.innerText === "O") {
+        window.helper.highlightDetectedWords();
+      }
+    });
+  }
+}
+
+setInterval(checkForConversationChange, 1000);
+
+function removeTooltipAndPanel() {
+  const tooltip = document.querySelector(".pii-highlight-tooltip");
+  if (tooltip) {
+    tooltip.remove();
+  }
+
+  const panel = document.getElementById("pii-replacement-panel");
+  if (panel) {
+    panel.remove();
+  }
+}
 
 chrome.runtime.onMessage.addListener(async function (
   request,
@@ -14,32 +90,15 @@ chrome.runtime.onMessage.addListener(async function (
 
   if (request.enabled !== undefined) {
     enabled = request.enabled;
+    window.helper.setEnabledStatus(enabled);
     console.log("Received new state:", enabled);
     sendResponse({ status: "State updated" });
   }
   if (request.action === "detect") {
-    const userMessage = window.helper.getUserInputText();
-    const { getResponseDetect, getResponseCluster } = await import(
-      chrome.runtime.getURL("openai.js")
-    );
-    const entities = await getResponseDetect(userMessage);
-    const clusterMessage = window.helper.generateUserMessageCluster(
-      userMessage,
-      entities
-    );
-    const clustersResponse = await getResponseCluster(clusterMessage); // new line
-    const clusters = JSON.parse(clustersResponse);
-    const { finalClusters, associatedGroups } =
-      window.helper.simplifyClustersWithTypes(clusters, entities);
-    detectedEntities = window.helper.processEntities(entities, finalClusters);
-    window.helper.detectWords(userMessage, detectedEntities);
-    const { createPIIReplacementPanel } = await import(
-      chrome.runtime.getURL("ui.js")
-    );
-    createPIIReplacementPanel(detectedEntities);
+    window.helper.handleDetectAndHighlight();
   } else if (request.action === "highlight") {
     const userMessage = window.helper.getUserInputText();
-    window.helper.detectWords(userMessage, detectedEntities);
+    window.helper.highlightWords(userMessage, detectedEntities);
   } else if (request.action === "replace-single") {
     window.helper.replaceSinglePii(request.piiText, request.entityType);
   } else if (request.action === "replace-all") {
@@ -79,7 +138,19 @@ chrome.storage.local.get("entityCounts", (data) => {
 });
 
 // Apply replacements on page load
-window.addEventListener("load", () => {
+async function initialize() {
+  const { initializeButton } = await import(
+    chrome.runtime.getURL("buttonWidget.js")
+  );
+  initializeButton();
+}
+
+// Call the initialize function when the content script loads and the DOM is ready
+window.addEventListener("load", async () => {
+  initialize();
+  await window.helper.getEnabledStatus();
+  enabled = window.helper.enabled;
+
   document
     .querySelectorAll('[data-message-author-role="assistant"]')
     .forEach((el) => {
