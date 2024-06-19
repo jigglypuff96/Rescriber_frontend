@@ -99,7 +99,7 @@
 }
 
 .detected-circle {
-  background-color: green;
+  background-color: beige;
   background-size: contain; /* Adjust this to fit the image properly */
   background-position: center;
   background-repeat: no-repeat;

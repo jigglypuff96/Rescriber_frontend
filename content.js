@@ -40,8 +40,12 @@ function typingHandler(e) {
 
 async function doneTyping() {
   showLoadingIndicator();
-  await window.helper.handleDetect();
-  updateDetectButton();
+  const { userMessage, detectedEntities } = await window.helper.handleDetect();
+  let noFound = true;
+  if (detectedEntities.length > 0) {
+    noFound = false;
+  }
+  updateDetectButton(noFound);
 }
 
 function showLoadingIndicator() {
@@ -51,13 +55,17 @@ function showLoadingIndicator() {
   }
 }
 
-function updateDetectButton() {
+function updateDetectButton(noFound) {
   const detectButton = document.getElementById("detect-next-to-input-button");
   if (detectButton) {
     detectButton.innerHTML = `<span class="detected-circle"></span>`;
     const detectedCircle = detectButton.querySelector(".detected-circle");
     const extensionId = chrome.runtime.id;
-    detectedCircle.style.backgroundImage = `url(chrome-extension://${extensionId}/images/issueDetected.png)`;
+    if (noFound) {
+      detectedCircle.style.backgroundImage = `url(chrome-extension://${extensionId}/images/check4.png)`;
+    } else {
+      detectedCircle.style.backgroundImage = `url(chrome-extension://${extensionId}/images/magnifier5.png)`;
+    }
 
     detectButton.addEventListener("click", () => {
       if (detectedCircle) {

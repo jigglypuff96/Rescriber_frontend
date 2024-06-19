@@ -33,7 +33,8 @@
         "replacePanel.js",
         "ui.css",
         "buttonWidget.js",
-        "images/issueDetected.png"
+        "images/check4.png",
+        "images/magnifier5.png"
       ],
       "matches": ["<all_urls>"]
     }
