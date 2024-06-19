@@ -32,7 +32,8 @@
         "openai.js",
         "replacePanel.js",
         "ui.css",
-        "buttonWidget.js"
+        "buttonWidget.js",
+        "images/issueDetected.png"
       ],
       "matches": ["<all_urls>"]
     }

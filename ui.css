@@ -100,9 +100,19 @@
 
 .detected-circle {
   background-color: green;
+  background-size: contain; /* Adjust this to fit the image properly */
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: white;
   font-size: 20px;
   font-weight: bold;
+  padding: 0;
 }
 
 .loader {

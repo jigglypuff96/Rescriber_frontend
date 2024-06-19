@@ -7,6 +7,7 @@ window.helper = {
   entityCounts: {},
   currentEntities: [],
   currentUserMessage: "",
+  tempMappings: {},
 
   getEnabledStatus: async function () {
     this.enabled = await new Promise((resolve, reject) => {
@@ -121,8 +122,6 @@ window.helper = {
     }
 
     const localEntityCounts = { ...entityCounts[activeConversationId] };
-    const pii2PlaceholderMapping = {};
-    const tempMappings = {};
 
     finalClusters.forEach((cluster) => {
       const entityType = entities
@@ -136,11 +135,20 @@ window.helper = {
         }
 
         const placeholder = `${entityType}${localEntityCounts[entityType]}`;
-
+        if (!this.pii2PlaceholderMappings[activeConversationId]) {
+          this.pii2PlaceholderMappings[activeConversationId] = {};
+        }
+        if (!this.tempMappings[activeConversationId]) {
+          this.tempMappings[activeConversationId] = {};
+        }
         cluster.forEach((item) => {
-          pii2PlaceholderMapping[item] = placeholder;
-          if (!tempMappings[placeholder]) {
-            tempMappings[placeholder] = item;
+          if (!this.pii2PlaceholderMappings[activeConversationId][item]) {
+            this.pii2PlaceholderMappings[activeConversationId][item] =
+              placeholder;
+          }
+
+          if (!this.tempMappings[activeConversationId][placeholder]) {
+            this.tempMappings[activeConversationId][placeholder] = item;
           }
         });
       }
@@ -148,18 +156,14 @@ window.helper = {
 
     entities.forEach((entity) => {
       entity.entity_type =
-        pii2PlaceholderMapping[entity.text] || entity.entity_type;
+        this.pii2PlaceholderMappings[activeConversationId][entity.text] ||
+        entity.entity_type;
     });
 
     entityCounts[activeConversationId] = localEntityCounts;
     this.tempPlaceholder2PiiMappings[activeConversationId] = {
       ...this.tempPlaceholder2PiiMappings[activeConversationId],
-      ...tempMappings,
-    };
-
-    this.pii2PlaceholderMappings[activeConversationId] = {
-      ...this.pii2PlaceholderMappings[activeConversationId],
-      ...pii2PlaceholderMapping,
+      ...this.tempMappings[activeConversationId],
     };
 
     // Save tempPlaceholder2PiiMappings to chrome storage
@@ -208,7 +212,7 @@ window.helper = {
   },
 
   handleDetectAndHighlight: async function () {
-    const { userMessage, detectedEntities } = this.handleDetect();
+    const { userMessage, detectedEntities } = await this.handleDetect();
     this.highlightWords(userMessage, detectedEntities);
     await this.showReplacementPanel(detectedEntities);
   },
@@ -446,6 +450,11 @@ window.helper = {
                   delete this.tempPlaceholder2PiiMappings[
                     `${activeConversationId}`
                   ];
+                  delete this.pii2PlaceholderMappings["no-url"];
+                  delete this.pii2PlaceholderMappings[
+                    `${activeConversationId}`
+                  ];
+                  delete this.tempMappings;
                   chrome.storage.local.set(
                     {
                       tempPlaceholder2PiiMappings:

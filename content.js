@@ -54,10 +54,14 @@ function showLoadingIndicator() {
 function updateDetectButton() {
   const detectButton = document.getElementById("detect-next-to-input-button");
   if (detectButton) {
-    detectButton.innerHTML = `<span class="detected-circle">O</span>`;
+    detectButton.innerHTML = `<span class="detected-circle"></span>`;
+    const detectedCircle = detectButton.querySelector(".detected-circle");
+    const extensionId = chrome.runtime.id;
+    detectedCircle.style.backgroundImage = `url(chrome-extension://${extensionId}/images/issueDetected.png)`;
+
     detectButton.addEventListener("click", () => {
-      if (detectButton.innerText === "O") {
-        window.helper.highlightDetectedAndShowReplacementPanel();
+      if (detectedCircle) {
+        window.helper.highlightDetectedWords();
       }
     });
   }
@@ -89,6 +93,7 @@ chrome.runtime.onMessage.addListener(async function (
     window.helper.setEnabledStatus(enabled);
     console.log("Received new state:", enabled);
     sendResponse({ status: "State updated" });
+    initializeButton();
   }
   if (request.action === "detect") {
     window.helper.handleDetectAndHighlight();

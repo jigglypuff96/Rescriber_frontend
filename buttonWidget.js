@@ -1,6 +1,7 @@
+let sendButtonObserver;
+
 export function initializeButton() {
   observeSendButton();
-  console.log("finished initalizingButton");
 }
 
 function observeSendButton() {
@@ -8,32 +9,37 @@ function observeSendButton() {
     'button[data-testid="fruitjuice-send-button"]'
   );
 
-  if (sendButton) {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (
-          mutation.type === "attributes" &&
-          mutation.attributeName === "disabled"
-        ) {
-          if (!sendButton.hasAttribute("disabled") && window.helper.enabled) {
-            addDetectButton();
-          } else {
-            removeDetectButton();
-          }
-        }
-      });
-    });
-
-    observer.observe(sendButton, { attributes: true });
-
-    // Initially check the button state
-    if (!sendButton.hasAttribute("disabled") && window.helper.enabled) {
-      addDetectButton();
-    } else {
-      removeDetectButton();
-    }
-  } else {
+  if (!sendButton) {
     console.error("Send button not found");
+    return;
+  }
+
+  if (sendButtonObserver) {
+    sendButtonObserver.disconnect(); // Disconnect the existing observer
+  }
+
+  sendButtonObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (
+        mutation.type === "attributes" &&
+        mutation.attributeName === "disabled"
+      ) {
+        if (!sendButton.hasAttribute("disabled") && window.helper.enabled) {
+          addDetectButton();
+        } else {
+          removeDetectButton();
+        }
+      }
+    });
+  });
+
+  sendButtonObserver.observe(sendButton, { attributes: true });
+
+  // Initially check the button state
+  if (!sendButton.hasAttribute("disabled") && window.helper.enabled) {
+    addDetectButton();
+  } else {
+    removeDetectButton();
   }
 }
 
@@ -53,7 +59,7 @@ function addDetectButton() {
     // Add event listener to handle click action
     detectButton.addEventListener("click", (event) => {
       event.stopPropagation(); // Prevents the event from bubbling up to parent elements
-      window.helper.handleDetectAndHighlight();
+      window.helper.highlightDetectedAndShowReplacementPanel();
     });
   }
 }
