@@ -63,11 +63,13 @@ export function createPIIReplacementPanel(detectedEntities) {
     if (checkedItems.length > 0) {
       const originalMessage = window.helper.currentUserMessage;
       const currentMessage = window.helper.getUserInputText();
-      window.helper.handleAbstractResponse(
-        originalMessage,
-        currentMessage,
-        checkedItems
-      );
+      showAbstractLoading();
+      window.helper
+        .handleAbstractResponse(originalMessage, currentMessage, checkedItems)
+        .finally(() => {
+          hideAbstractLoading();
+          document.getElementById("abstract-btn").disabled = true;
+        });
     }
   });
 
@@ -116,3 +118,17 @@ document.addEventListener("click", (event) => {
     }
   }
 });
+
+function showAbstractLoading() {
+  const abstractBtn = document.getElementById("abstract-btn");
+  if (abstractBtn) {
+    abstractBtn.innerHTML = 'Abstract<span class="loader-circle"></span>';
+  }
+}
+
+function hideAbstractLoading() {
+  const abstractBtn = document.getElementById("abstract-btn");
+  if (abstractBtn) {
+    abstractBtn.innerHTML = "Abstract";
+  }
+}
