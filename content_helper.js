@@ -414,7 +414,11 @@ window.helper = {
     });
   },
 
-  async handleAbstractResponse(originalMessage, currentMessage, abstractList) {
+  handleAbstractResponse: async function (
+    originalMessage,
+    currentMessage,
+    abstractList
+  ) {
     const { getAbstractResponse } = await import(
       chrome.runtime.getURL("openai.js")
     );
@@ -428,11 +432,29 @@ window.helper = {
     if (abstractResponse && abstractResponse.text) {
       const input = document.querySelector("textarea, input[type='text']");
       if (input) {
-        input.value = abstractResponse.text; // Replace the input box value
-        this.currentUserMessage = abstractResponse.text; // Update currentUserMessage
-        await this.handleDetectAndUpdatePanel(); // Update the detected entities and panel
+        input.value = abstractResponse.text;
+        this.currentUserMessage = abstractResponse.text;
+        this.updateDetectedEntities();
+        await this.handleDetectAndUpdatePanel();
       }
     }
+  },
+
+  updateDetectedEntities: function () {
+    const newDetectedEntities = [];
+    const inputText = this.currentUserMessage;
+
+    this.currentEntities.forEach((entity) => {
+      if (inputText.includes(entity.text)) {
+        newDetectedEntities.push(entity);
+      }
+    });
+
+    this.currentEntities = newDetectedEntities;
+  },
+
+  updatePanelWithCurrentDetection: async function () {
+    this.updatePIIReplacementPanel(detectedEntities);
   },
 
   handleDetectAndUpdatePanel: async function () {
