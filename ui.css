@@ -2,36 +2,79 @@
   position: fixed;
   bottom: 50px;
   right: 20px;
-  width: 300px;
+  width: 350px;
   background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   padding: 10px;
-  z-index: 1000;
+  z-index: 1000; /* Default z-index */
   color: black;
 }
 
-#pii-replacement-panel h4 {
-  margin: 0 0 10px 0;
-  font-size: 16px;
-  font-weight: bold;
+.pii-highlight-tooltip {
+  z-index: 1000; /* Ensure it has a lower z-index */
 }
 
-#pii-list {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-
-#pii-list li {
-  margin: 5px 0;
+.pii-replacement-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-#pii-list li button {
+#pii-replacement-panel h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+#highlight-btn {
+  background-color: #ffc107;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+#highlight-btn:hover {
+  background-color: #e0a800;
+}
+
+#close-panel-btn {
+  background-color: #6c757d; /* Gray background */
+  color: #fff;
+  border: none;
+  border-radius: 50%; /* Make it round */
+  padding: 3px 7px; /* Adjust padding for smaller size */
+  cursor: pointer;
+  font-size: 12px; /* Smaller font size */
+}
+
+#close-panel-btn:hover {
+  background-color: #5a6268;
+}
+
+#pii-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 10px 0;
+}
+
+.pii-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 5px 0;
+}
+
+.pii-item span {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.pii-item button {
   background-color: #007bff;
   color: #fff;
   border: none;
@@ -40,36 +83,53 @@
   cursor: pointer;
 }
 
-#pii-list li button:hover {
+.pii-item button:hover {
   background-color: #0056b3;
 }
 
-#replace-all {
-  display: block;
-  width: 100%;
-  text-align: center;
-  background-color: #28a745;
+.pii-item .pii-checkbox {
+  margin-left: 10px;
+}
+
+.pii-replacement-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+#replace-all-btn {
+  background-color: #007bff;
   color: #fff;
   border: none;
   border-radius: 3px;
   padding: 10px;
-  margin-top: 10px;
   cursor: pointer;
+  flex: 1;
+  margin: 0 5px;
 }
 
-#replace-all:hover {
-  background-color: #218838;
+#replace-all-btn:hover {
+  background-color: #0056b3;
 }
 
-.replace-btn {
-  margin-left: 10px;
+#abstract-btn {
+  background-color: #17a2b8;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 10px;
+  cursor: pointer;
+  flex: 1;
+  margin: 0 5px;
 }
 
-#replace-all-btn,
-#highlight-btn {
-  margin-top: 10px;
-  display: block;
-  width: 100%;
+#abstract-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+#abstract-btn:hover:enabled {
+  background-color: #138496;
 }
 
 #detect-next-to-input-button {

@@ -40,7 +40,8 @@ function typingHandler(e) {
 
 async function doneTyping() {
   showLoadingIndicator();
-  const { userMessage, detectedEntities } = await window.helper.handleDetect();
+  const { userMessage, detectedEntities } =
+    await window.helper.handleDetectAndUpdatePanel();
   let noFound = true;
   if (detectedEntities.length > 0) {
     noFound = false;

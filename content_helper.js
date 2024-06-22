@@ -414,6 +414,42 @@ window.helper = {
     });
   },
 
+  async handleAbstractResponse(originalMessage, currentMessage, abstractList) {
+    const { getAbstractResponse } = await import(
+      chrome.runtime.getURL("openai.js")
+    );
+    const response = await getAbstractResponse(
+      originalMessage,
+      currentMessage,
+      abstractList
+    );
+    const abstractResponse = JSON.parse(response);
+
+    if (abstractResponse && abstractResponse.text) {
+      const input = document.querySelector("textarea, input[type='text']");
+      if (input) {
+        input.value = abstractResponse.text; // Replace the input box value
+        this.currentUserMessage = abstractResponse.text; // Update currentUserMessage
+        await this.handleDetectAndUpdatePanel(); // Update the detected entities and panel
+      }
+    }
+  },
+
+  handleDetectAndUpdatePanel: async function () {
+    const { userMessage, detectedEntities } = await this.handleDetect();
+    this.highlightWords(userMessage, detectedEntities);
+    this.updatePIIReplacementPanel(detectedEntities);
+    return { userMessage, detectedEntities };
+  },
+
+  updatePIIReplacementPanel: function (detectedEntities) {
+    const panel = document.getElementById("pii-replacement-panel");
+    if (panel) {
+      panel.remove(); // Remove existing panel to update with new entities
+      this.showReplacementPanel(detectedEntities); // Create a new panel with updated entities
+    }
+  },
+
   checkMessageRenderedAndReplace: function (element) {
     const interval = setInterval(() => {
       const starButton = element?.parentElement?.parentElement
@@ -454,7 +490,8 @@ window.helper = {
                   delete this.pii2PlaceholderMappings[
                     `${activeConversationId}`
                   ];
-                  delete this.tempMappings;
+                  delete this.tempMappings["no-url"];
+                  delete this.tempMappings[`${activeConversationId}`];
                   chrome.storage.local.set(
                     {
                       tempPlaceholder2PiiMappings:

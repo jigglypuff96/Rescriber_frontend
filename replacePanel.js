@@ -15,16 +15,28 @@ export function createPIIReplacementPanel(detectedEntities) {
 
   const piiList = detectedEntities
     .map(
-      (entity) => `<li>${entity.text} - ${entity.entity_type} 
-      <button class="replace-single-btn" data-pii-text="${entity.text}" data-entity-type="${entity.entity_type}">Replace</button></li>`
+      (entity) => `
+      <li class="pii-item">
+        <span>${entity.text} - ${entity.entity_type}</span>
+        <button class="replace-single-btn" data-pii-text="${entity.text}" data-entity-type="${entity.entity_type}">Replace</button>
+        <input type="checkbox" class="pii-checkbox" data-entity-text="${entity.text}">
+      </li>`
     )
     .join("");
   panel.innerHTML = `
-          <h4>PII Replacements</h4>
-          <ul id="pii-list">${piiList}</ul>
-          <button id="replace-all-btn">Replace All</button>
-          <button id="highlight-btn">Highlight</button>
-        `;
+    <div class="pii-replacement-header">
+      <h4>PII Replacements</h4>
+      <div class="right-corner-buttons">
+        <button id="highlight-btn">Highlight</button>
+        <button id="close-panel-btn">X</button>
+      </div>
+    </div>
+    <ul id="pii-list">${piiList}</ul>
+    <div class="pii-replacement-footer">
+      <button id="replace-all-btn">Replace All</button>
+      <button id="abstract-btn" disabled>Abstract</button>
+    </div>
+  `;
 
   document.querySelectorAll(".replace-single-btn").forEach((button) => {
     button.addEventListener("click", () => {
@@ -42,4 +54,65 @@ export function createPIIReplacementPanel(detectedEntities) {
     const userMessage = window.helper.getUserInputText();
     window.helper.highlightWords(userMessage, detectedEntities);
   });
+
+  document.getElementById("abstract-btn").addEventListener("click", () => {
+    const checkedItems = Array.from(
+      document.querySelectorAll(".pii-checkbox:checked")
+    ).map((checkbox) => checkbox.getAttribute("data-entity-text"));
+
+    if (checkedItems.length > 0) {
+      const originalMessage = window.helper.currentUserMessage;
+      const currentMessage = window.helper.getUserInputText();
+      window.helper.handleAbstractResponse(
+        originalMessage,
+        currentMessage,
+        checkedItems
+      );
+    }
+  });
+
+  document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      const anyChecked = Array.from(
+        document.querySelectorAll(".pii-checkbox")
+      ).some((cb) => cb.checked);
+      document.getElementById("abstract-btn").disabled = !anyChecked;
+    });
+  });
+
+  // Add click event to bring panel to front
+  panel.addEventListener("click", (event) => {
+    event.stopPropagation();
+    panel.style.zIndex = 1001; // Set a high z-index to bring it to front
+    const tooltip = document.querySelector(".pii-highlight-tooltip");
+    if (tooltip) {
+      tooltip.style.zIndex = 1000; // Ensure tooltip has a lower z-index
+    }
+  });
+
+  // Add click event to close the panel
+  document.getElementById("close-panel-btn").addEventListener("click", () => {
+    panel.style.display = "none";
+  });
 }
+
+// Ensure tooltip has a lower z-index initially
+document.addEventListener("click", (event) => {
+  const tooltip = document.querySelector(".pii-highlight-tooltip");
+  const panel = document.getElementById("pii-replacement-panel");
+  if (tooltip && !panel.contains(event.target)) {
+    tooltip.style.zIndex = 1000; // Set a lower z-index
+  }
+});
+
+// Add click event to tooltip to bring it to front
+document.addEventListener("click", (event) => {
+  const tooltip = document.querySelector(".pii-highlight-tooltip");
+  if (tooltip && tooltip.contains(event.target)) {
+    tooltip.style.zIndex = 1001; // Bring tooltip to front
+    const panel = document.getElementById("pii-replacement-panel");
+    if (panel) {
+      panel.style.zIndex = 1000; // Ensure panel has a lower z-index
+    }
+  }
+});
