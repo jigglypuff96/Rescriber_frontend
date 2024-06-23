@@ -34,7 +34,8 @@
         "ui.css",
         "buttonWidget.js",
         "images/check4.png",
-        "images/magnifier5.png"
+        "images/magnifier5.png",
+        "images/revert.jpg"
       ],
       "matches": ["<all_urls>"]
     }

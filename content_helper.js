@@ -8,6 +8,8 @@ window.helper = {
   currentEntities: [],
   currentUserMessage: "",
   tempMappings: {},
+  previousUserMessage: "",
+  previousEntities: [],
 
   getEnabledStatus: async function () {
     this.enabled = await new Promise((resolve, reject) => {
@@ -225,12 +227,27 @@ window.helper = {
     const { createPIIReplacementPanel } = await import(
       chrome.runtime.getURL("replacePanel.js")
     );
-    createPIIReplacementPanel(detectedEntities);
+    await createPIIReplacementPanel(detectedEntities);
   },
 
   highlightDetectedAndShowReplacementPanel: function () {
     this.highlightWords(this.currentUserMessage, this.currentEntities);
     this.showReplacementPanel(this.currentEntities);
+  },
+
+  saveCurrentState: function () {
+    this.previousUserMessage = this.currentUserMessage;
+    this.previousEntities = [...this.currentEntities];
+  },
+
+  revertToPreviousState: async function () {
+    const input = document.querySelector("textarea, input[type='text']");
+    if (input) {
+      input.value = this.previousUserMessage;
+      this.currentUserMessage = this.previousUserMessage;
+      this.currentEntities = [...this.previousEntities];
+      await this.updatePIIReplacementPanel(this.currentEntities);
+    }
   },
 
   highlightWords: function (userMessage, entities) {
@@ -435,7 +452,7 @@ window.helper = {
         input.value = abstractResponse.text;
         this.currentUserMessage = abstractResponse.text;
         this.updateDetectedEntities();
-        await this.handleDetectAndUpdatePanel();
+        await this.updatePanelWithCurrentDetection();
       }
     }
   },
@@ -454,21 +471,21 @@ window.helper = {
   },
 
   updatePanelWithCurrentDetection: async function () {
-    this.updatePIIReplacementPanel(detectedEntities);
+    await this.updatePIIReplacementPanel(this.currentEntities);
   },
 
   handleDetectAndUpdatePanel: async function () {
     const { userMessage, detectedEntities } = await this.handleDetect();
     this.highlightWords(userMessage, detectedEntities);
-    this.updatePIIReplacementPanel(detectedEntities);
+    await this.updatePIIReplacementPanel(detectedEntities);
     return { userMessage, detectedEntities };
   },
 
-  updatePIIReplacementPanel: function (detectedEntities) {
+  updatePIIReplacementPanel: async function (detectedEntities) {
     const panel = document.getElementById("pii-replacement-panel");
     if (panel) {
-      panel.remove(); // Remove existing panel to update with new entities
-      this.showReplacementPanel(detectedEntities); // Create a new panel with updated entities
+      panel.remove();
+      await this.showReplacementPanel(detectedEntities);
     }
   },
 

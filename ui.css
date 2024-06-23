@@ -112,6 +112,11 @@
   background-color: #0056b3;
 }
 
+.abstract-and-revert {
+  flex: 1;
+  display: flex;
+}
+
 #abstract-btn {
   background-color: #17a2b8;
   color: #fff;
@@ -119,7 +124,7 @@
   border-radius: 3px;
   padding: 10px;
   cursor: pointer;
-  flex: 1;
+  flex: 4;
   margin: 0 5px;
 
   position: relative;
@@ -135,6 +140,33 @@
 
 #abstract-btn:hover:enabled {
   background-color: #138496;
+}
+
+#revert-btn {
+  background-color: #6c757d; /* Gray background */
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 10px;
+  cursor: pointer;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#revert-btn img {
+  width: 100%;
+  height: 100%;
+}
+
+#revert-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+#revert-btn:hover:enabled {
+  background-color: #5a6268;
 }
 
 @keyframes abstract-spin {

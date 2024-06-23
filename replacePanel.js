@@ -34,7 +34,15 @@ export function createPIIReplacementPanel(detectedEntities) {
     <ul id="pii-list">${piiList}</ul>
     <div class="pii-replacement-footer">
       <button id="replace-all-btn">Replace All</button>
-      <button id="abstract-btn" disabled>Abstract</button>
+      <div class="abstract-and-revert">
+        <button id="abstract-btn" disabled>Abstract</button>
+        <button id="revert-btn" disabled>
+        <img src="${chrome.runtime.getURL(
+          "images/revert.jpg"
+        )}" alt="Revert"></button>
+      </div>
+        
+      
     </div>
   `;
 
@@ -55,23 +63,30 @@ export function createPIIReplacementPanel(detectedEntities) {
     window.helper.highlightWords(userMessage, detectedEntities);
   });
 
-  document.getElementById("abstract-btn").addEventListener("click", () => {
-    const checkedItems = Array.from(
-      document.querySelectorAll(".pii-checkbox:checked")
-    ).map((checkbox) => checkbox.getAttribute("data-entity-text"));
+  document
+    .getElementById("abstract-btn")
+    .addEventListener("click", async () => {
+      const checkedItems = Array.from(
+        document.querySelectorAll(".pii-checkbox:checked")
+      ).map((checkbox) => checkbox.getAttribute("data-entity-text"));
 
-    if (checkedItems.length > 0) {
-      const originalMessage = window.helper.currentUserMessage;
-      const currentMessage = window.helper.getUserInputText();
-      showAbstractLoading();
-      window.helper
-        .handleAbstractResponse(originalMessage, currentMessage, checkedItems)
-        .finally(() => {
-          hideAbstractLoading();
-          document.getElementById("abstract-btn").disabled = true;
-        });
-    }
-  });
+      if (checkedItems.length > 0) {
+        const originalMessage = window.helper.currentUserMessage;
+        const currentMessage = window.helper.getUserInputText();
+
+        // Save the current state before abstraction
+        window.helper.saveCurrentState();
+
+        showAbstractLoading();
+        await window.helper
+          .handleAbstractResponse(originalMessage, currentMessage, checkedItems)
+          .finally(() => {
+            hideAbstractLoading();
+            document.getElementById("abstract-btn").disabled = true;
+            document.getElementById("revert-btn").disabled = false;
+          });
+      }
+    });
 
   document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
     checkbox.addEventListener("change", () => {
@@ -80,6 +95,10 @@ export function createPIIReplacementPanel(detectedEntities) {
       ).some((cb) => cb.checked);
       document.getElementById("abstract-btn").disabled = !anyChecked;
     });
+  });
+
+  document.getElementById("revert-btn").addEventListener("click", async () => {
+    await window.helper.revertToPreviousState();
   });
 
   // Add click event to bring panel to front
@@ -98,27 +117,6 @@ export function createPIIReplacementPanel(detectedEntities) {
   });
 }
 
-// Ensure tooltip has a lower z-index initially
-document.addEventListener("click", (event) => {
-  const tooltip = document.querySelector(".pii-highlight-tooltip");
-  const panel = document.getElementById("pii-replacement-panel");
-  if (tooltip && !panel.contains(event.target)) {
-    tooltip.style.zIndex = 1000; // Set a lower z-index
-  }
-});
-
-// Add click event to tooltip to bring it to front
-document.addEventListener("click", (event) => {
-  const tooltip = document.querySelector(".pii-highlight-tooltip");
-  if (tooltip && tooltip.contains(event.target)) {
-    tooltip.style.zIndex = 1001; // Bring tooltip to front
-    const panel = document.getElementById("pii-replacement-panel");
-    if (panel) {
-      panel.style.zIndex = 1000; // Ensure panel has a lower z-index
-    }
-  }
-});
-
 function showAbstractLoading() {
   const abstractBtn = document.getElementById("abstract-btn");
   if (abstractBtn) {
@@ -132,3 +130,20 @@ function hideAbstractLoading() {
     abstractBtn.innerHTML = "Abstract";
   }
 }
+
+// Ensure tooltip has a lower z-index initially
+document.addEventListener("click", (event) => {
+  const tooltip = document.querySelector(".pii-highlight-tooltip");
+  const panel = document.getElementById("pii-replacement-panel");
+  if (tooltip && panel) {
+    if (panel.contains(event.target)) {
+      tooltip.style.zIndex = 999; // Set a lower z-index
+    } else if (tooltip.contains(event.target)) {
+      tooltip.style.zIndex = 1001; // Bring tooltip to front
+      panel.style.zIndex = 1000; // Ensure panel has a lower z-index
+    } else {
+      tooltip.remove();
+      panel.remove();
+    }
+  }
+});
