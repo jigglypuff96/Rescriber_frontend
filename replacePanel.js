@@ -18,49 +18,53 @@ export function createPIIReplacementPanel(detectedEntities) {
       (entity) => `
       <li class="pii-item">
         <span>${entity.text} - ${entity.entity_type}</span>
-        <button class="replace-single-btn" data-pii-text="${entity.text}" data-entity-type="${entity.entity_type}">Replace</button>
         <input type="checkbox" class="pii-checkbox" data-entity-text="${entity.text}">
       </li>`
     )
     .join("");
   panel.innerHTML = `
     <div class="pii-replacement-header">
-      <h4>PII Replacements</h4>
+      <h4>Information Protector</h4>
       <div class="right-corner-buttons">
-        <button id="highlight-btn">Highlight</button>
+        <span id="select-all">Select All</span>
+        <input type="checkbox" id="select-all-checkbox">
         <button id="close-panel-btn">X</button>
       </div>
     </div>
     <ul id="pii-list">${piiList}</ul>
     <div class="pii-replacement-footer">
-      <button id="replace-all-btn">Replace All</button>
-      <div class="abstract-and-revert">
-        <button id="abstract-btn" disabled>Abstract</button>
-        <button id="revert-btn" disabled>
-        <img src="${chrome.runtime.getURL(
-          "images/revert.jpg"
-        )}" alt="Revert"></button>
-      </div>
-        
-      
+    <div class="replace-abstract"></div>
+      <button id="replace-btn" class="replacePanelActionButton" disabled>Replace</button>
+      <button id="abstract-btn" class="replacePanelActionButton" disabled>Abstract<span class="loader-circle" style="display: none;"></span></button>
+      <button id="revert-btn" class="replacePanelActionButton" disabled>
+        <img src="${chrome.runtime.getURL("images/revert.jpg")}" alt="Revert">
+      </button>
     </div>
   `;
 
-  document.querySelectorAll(".replace-single-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const piiText = button.getAttribute("data-pii-text");
-      const entityType = button.getAttribute("data-entity-type");
-      window.helper.replaceSinglePii(piiText, entityType);
+  document.getElementById("select-all").addEventListener("click", () => {
+    const allChecked = document.getElementById("select-all-checkbox").checked;
+    document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
+      checkbox.checked = !allChecked;
     });
+    document.getElementById("select-all-checkbox").checked = !allChecked;
+    toggleButtonsState();
   });
 
-  document.getElementById("replace-all-btn").addEventListener("click", () => {
-    window.helper.replaceWords(detectedEntities);
+  document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", toggleButtonsState);
   });
 
-  document.getElementById("highlight-btn").addEventListener("click", () => {
-    const userMessage = window.helper.getUserInputText();
-    window.helper.highlightWords(userMessage, detectedEntities);
+  document.getElementById("replace-btn").addEventListener("click", () => {
+    const checkedItems = Array.from(
+      document.querySelectorAll(".pii-checkbox:checked")
+    ).map((checkbox) => checkbox.getAttribute("data-entity-text"));
+
+    if (checkedItems.length > 0) {
+      const entitiesToReplace =
+        window.helper.getEntitiesForSelectedText(checkedItems);
+      window.helper.replaceWords(entitiesToReplace);
+    }
   });
 
   document
@@ -88,17 +92,13 @@ export function createPIIReplacementPanel(detectedEntities) {
       }
     });
 
-  document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
-    checkbox.addEventListener("change", () => {
-      const anyChecked = Array.from(
-        document.querySelectorAll(".pii-checkbox")
-      ).some((cb) => cb.checked);
-      document.getElementById("abstract-btn").disabled = !anyChecked;
-    });
+  document.getElementById("revert-btn").addEventListener("click", () => {
+    window.helper.revertToPreviousState();
+    document.getElementById("revert-btn").disabled = true;
   });
 
-  document.getElementById("revert-btn").addEventListener("click", async () => {
-    await window.helper.revertToPreviousState();
+  document.getElementById("close-panel-btn").addEventListener("click", () => {
+    panel.style.display = "none";
   });
 
   // Add click event to bring panel to front
@@ -111,39 +111,36 @@ export function createPIIReplacementPanel(detectedEntities) {
     }
   });
 
-  // Add click event to close the panel
-  document.getElementById("close-panel-btn").addEventListener("click", () => {
-    panel.style.display = "none";
-  });
-}
-
-function showAbstractLoading() {
-  const abstractBtn = document.getElementById("abstract-btn");
-  if (abstractBtn) {
-    abstractBtn.innerHTML = 'Abstract<span class="loader-circle"></span>';
-  }
-}
-
-function hideAbstractLoading() {
-  const abstractBtn = document.getElementById("abstract-btn");
-  if (abstractBtn) {
-    abstractBtn.innerHTML = "Abstract";
-  }
-}
-
-// Ensure tooltip has a lower z-index initially
-document.addEventListener("click", (event) => {
-  const tooltip = document.querySelector(".pii-highlight-tooltip");
-  const panel = document.getElementById("pii-replacement-panel");
-  if (tooltip && panel) {
-    if (panel.contains(event.target)) {
-      tooltip.style.zIndex = 999; // Set a lower z-index
-    } else if (tooltip.contains(event.target)) {
-      tooltip.style.zIndex = 1001; // Bring tooltip to front
-      panel.style.zIndex = 1000; // Ensure panel has a lower z-index
-    } else {
-      tooltip.remove();
-      panel.remove();
+  // Ensure tooltip has a lower z-index initially
+  document.addEventListener("click", (event) => {
+    const tooltip = document.querySelector(".pii-highlight-tooltip");
+    const panel = document.getElementById("pii-replacement-panel");
+    if (tooltip && panel) {
+      if (panel.contains(event.target)) {
+        tooltip.style.zIndex = 999; // Set a lower z-index
+      } else if (tooltip.contains(event.target)) {
+        tooltip.style.zIndex = 1001; // Bring tooltip to front
+        panel.style.zIndex = 1000; // Ensure panel has a lower z-index
+      } else {
+        tooltip.remove();
+        panel.remove();
+      }
     }
+  });
+
+  function toggleButtonsState() {
+    const anyChecked = Array.from(
+      document.querySelectorAll(".pii-checkbox")
+    ).some((cb) => cb.checked);
+    document.getElementById("replace-btn").disabled = !anyChecked;
+    document.getElementById("abstract-btn").disabled = !anyChecked;
   }
-});
+
+  function showAbstractLoading() {
+    document.querySelector(".loader-circle").style.display = "inline-block";
+  }
+
+  function hideAbstractLoading() {
+    document.querySelector(".loader-circle").style.display = "none";
+  }
+}

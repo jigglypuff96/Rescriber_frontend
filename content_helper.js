@@ -317,6 +317,12 @@ window.helper = {
     });
   },
 
+  getEntitiesForSelectedText: function (selectedTexts) {
+    return this.currentEntities.filter((entity) =>
+      selectedTexts.includes(entity.text)
+    );
+  },
+
   replaceWords: function (entities) {
     const textareas = document.querySelectorAll("textarea");
     const inputs = document.querySelectorAll("input[type='text']");
