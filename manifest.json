@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "PII Auto Reviser",
+  "name": "PII SecureGuard",
   "version": "1.0",
   "description": "An extension that revises PII.",
   "permissions": ["activeTab", "storage", "scripting"],

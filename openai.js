@@ -111,7 +111,7 @@ export async function getCloudResponseCluster(userMessageCluster) {
     response_format: { type: "json_object" },
   };
 
-  console.log("Request Body:", JSON.stringify(requestBody, null, 2));
+  // console.log("Request Body:", JSON.stringify(requestBody, null, 2));
 
   try {
     const response = await fetch(url, {

@@ -33,9 +33,15 @@
   color: #fff;
   border: none;
   border-radius: 3px;
-  padding: 5px 10px;
+  padding: 5px 5px;
   cursor: pointer;
   margin-right: 10px;
+  font-size: small;
+}
+
+#highlight-btn disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 #highlight-btn:hover {
@@ -56,7 +62,7 @@
   background-color: #5a6268;
 }
 
-#select-all {
+/* #select-all {
   color: #007bff;
   cursor: pointer;
   text-decoration: underline;
@@ -64,7 +70,7 @@
 
 #select-all:hover {
   color: #0056b3;
-}
+} */
 
 #pii-list {
   list-style-type: none;
@@ -132,7 +138,9 @@
   background-color: #17a2b8;
 }
 
-#abstract-btn:disabled {
+#abstract-btn:disabled,
+#replace-btn:disabled,
+#revert-btn:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
 }
@@ -148,11 +156,6 @@
 #revert-btn img {
   width: 16px;
   height: 16px;
-}
-
-#revert-btn:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
 }
 
 #revert-btn:hover:enabled {
@@ -246,4 +249,11 @@
   100% {
     transform: rotate(360deg);
   }
+}
+
+.pii-checkbox:disabled {
+  background-color: #cccccc;
+  border-radius: 3px;
+  border: 1px solid #aaa;
+  cursor: not-allowed;
 }

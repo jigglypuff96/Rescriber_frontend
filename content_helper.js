@@ -517,8 +517,8 @@ window.helper = {
       if (input) {
         input.value = abstractResponse.text;
         this.currentUserMessage = abstractResponse.text;
-        this.updateDetectedEntities();
-        await this.updatePanelWithCurrentDetection();
+        // this.updateDetectedEntities();
+        // await this.updatePanelWithCurrentDetection();
       }
     }
   },

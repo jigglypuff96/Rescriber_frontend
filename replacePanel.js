@@ -24,8 +24,9 @@ export function createPIIReplacementPanel(detectedEntities) {
     .join("");
   panel.innerHTML = `
     <div class="pii-replacement-header">
-      <h4>Information Protector</h4>
+      <h4>SecureGuard</h4>
       <div class="right-corner-buttons">
+        <button id="highlight-btn">Show tooltip</button>
         <span id="select-all">Select All</span>
         <input type="checkbox" id="select-all-checkbox">
         <button id="close-panel-btn">X</button>
@@ -42,17 +43,19 @@ export function createPIIReplacementPanel(detectedEntities) {
     </div>
   `;
 
-  document.getElementById("select-all").addEventListener("click", () => {
-    const allChecked = document.getElementById("select-all-checkbox").checked;
-    document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
-      checkbox.checked = !allChecked;
+  document
+    .getElementById("select-all-checkbox")
+    .addEventListener("change", () => {
+      const allChecked = document.getElementById("select-all-checkbox").checked;
+      document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
+        // checkbox.checked = true;
+        checkbox.checked = allChecked;
+      });
+      toggleButtonsState();
     });
-    document.getElementById("select-all-checkbox").checked = !allChecked;
-    disableButtonsState();
-  });
 
   document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
-    checkbox.addEventListener("change", disableButtonsState);
+    checkbox.addEventListener("change", toggleButtonsState);
   });
 
   document.getElementById("replace-btn").addEventListener("click", () => {
@@ -61,10 +64,15 @@ export function createPIIReplacementPanel(detectedEntities) {
     ).map((checkbox) => checkbox.getAttribute("data-entity-text"));
 
     if (checkedItems.length > 0) {
+      window.helper.saveCurrentState();
       const entitiesToReplace =
         window.helper.getEntitiesForSelectedText(checkedItems);
       window.helper.replaceWords(entitiesToReplace);
     }
+    document.getElementById("abstract-btn").disabled = true;
+    document.getElementById("replace-btn").disabled = true;
+    document.getElementById("revert-btn").disabled = false;
+    disableCheckedCheckboxes();
   });
 
   document
@@ -87,7 +95,9 @@ export function createPIIReplacementPanel(detectedEntities) {
           .finally(() => {
             hideAbstractLoading();
             document.getElementById("abstract-btn").disabled = true;
+            document.getElementById("replace-btn").disabled = true;
             document.getElementById("revert-btn").disabled = false;
+            disableCheckedCheckboxes();
           });
       }
     });
@@ -99,6 +109,29 @@ export function createPIIReplacementPanel(detectedEntities) {
 
   document.getElementById("close-panel-btn").addEventListener("click", () => {
     panel.style.display = "none";
+  });
+
+  document.getElementById("highlight-btn").addEventListener("click", () => {
+    window.helper.highlightDetectedWords();
+  });
+
+  function checkTooltip() {
+    const tooltip = document.querySelector(".pii-highlight-tooltip");
+    const highlightButton = document.getElementById("highlight-btn");
+    highlightButton.disabled = tooltip !== null;
+  }
+
+  // Initial check
+  checkTooltip();
+
+  // Observe changes to the tooltip's existence
+  const observer = new MutationObserver(() => {
+    checkTooltip();
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
   });
 
   // Add click event to bring panel to front
@@ -128,7 +161,7 @@ export function createPIIReplacementPanel(detectedEntities) {
     }
   });
 
-  function disableButtonsState() {
+  function toggleButtonsState() {
     const anyChecked = Array.from(
       document.querySelectorAll(".pii-checkbox")
     ).some((cb) => cb.checked);
@@ -142,5 +175,15 @@ export function createPIIReplacementPanel(detectedEntities) {
 
   function hideAbstractLoading() {
     document.querySelector(".loader-circle").style.display = "none";
+  }
+
+  function disableCheckedCheckboxes() {
+    const checkboxes = document.querySelectorAll(".pii-checkbox");
+    checkboxes.forEach((checkbox) => {
+      if (checkbox.checked) {
+        checkbox.disabled = true;
+        checkbox.checked = false;
+      }
+    });
   }
 }
