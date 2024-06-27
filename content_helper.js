@@ -10,6 +10,11 @@ window.helper = {
   tempMappings: {},
   previousUserMessage: "",
   previousEntities: [],
+  useOnDeviceModel: false,
+
+  toggleModel: function () {
+    this.useOnDeviceModel = !this.useOnDeviceModel;
+  },
 
   getEnabledStatus: async function () {
     this.enabled = await new Promise((resolve, reject) => {
@@ -186,20 +191,79 @@ window.helper = {
     return entities;
   },
 
+  getResponseDetect: async function (userMessage) {
+    let entities;
+    if (!this.useOnDeviceModel) {
+      const { getCloudResponseDetect } = await import(
+        chrome.runtime.getURL("openai.js")
+      );
+      entities = await getCloudResponseDetect(userMessage);
+    } else {
+      const { getOnDeviceResponseDetect } = await import(
+        chrome.runtime.getURL("ondevice.js")
+      );
+      entities = await getOnDeviceResponseDetect(userMessage);
+    }
+    return entities;
+  },
+
+  getResponseCluster: async function (clusterMessage) {
+    let clustersResponse;
+    if (!this.useOnDeviceModel) {
+      const { getCloudResponseCluster } = await import(
+        chrome.runtime.getURL("openai.js")
+      );
+      clustersResponse = await getCloudResponseCluster(clusterMessage);
+    } else {
+      const { getOnDeviceResponseCluster } = await import(
+        chrome.runtime.getURL("ondevice.js")
+      );
+      clustersResponse = await getOnDeviceResponseCluster(clusterMessage);
+    }
+    return clustersResponse;
+  },
+
+  getAbstractResponse: async function (
+    originalMessage,
+    currentMessage,
+    abstractList
+  ) {
+    let abstractResponse;
+    if (!this.useOnDeviceModel) {
+      const { getCloudAbstractResponse } = await import(
+        chrome.runtime.getURL("openai.js")
+      );
+      const abstractResponseResult = await getCloudAbstractResponse(
+        originalMessage,
+        currentMessage,
+        abstractList
+      );
+
+      abstractResponse = JSON.parse(abstractResponseResult);
+    } else {
+      const { getOnDeviceAbstractResponse } = await import(
+        chrome.runtime.getURL("ondevice.js")
+      );
+      abstractResponse = await getOnDeviceAbstractResponse(
+        originalMessage,
+        currentMessage,
+        abstractList
+      );
+    }
+    return abstractResponse;
+  },
+
   handleDetect: async function () {
     const userMessage = this.getUserInputText();
     this.currentUserMessage = userMessage;
-    const { getResponseDetect, getResponseCluster } = await import(
-      chrome.runtime.getURL("openai.js")
-    );
-    const entities = await getResponseDetect(userMessage);
+    const entities = await this.getResponseDetect(userMessage);
     const clusterMessage = this.generateUserMessageCluster(
       userMessage,
       entities
     );
     let finalClusters = [];
     if (clusterMessage) {
-      const clustersResponse = await getResponseCluster(clusterMessage);
+      const clustersResponse = await this.getResponseCluster(clusterMessage);
       const clusters = JSON.parse(clustersResponse);
       const { finalClusters, associatedGroups } =
         this.simplifyClustersWithTypes(clusters, entities);
@@ -442,15 +506,11 @@ window.helper = {
     currentMessage,
     abstractList
   ) {
-    const { getAbstractResponse } = await import(
-      chrome.runtime.getURL("openai.js")
-    );
-    const response = await getAbstractResponse(
+    const abstractResponse = await this.getAbstractResponse(
       originalMessage,
       currentMessage,
       abstractList
     );
-    const abstractResponse = JSON.parse(response);
 
     if (abstractResponse && abstractResponse.text) {
       const input = document.querySelector("textarea, input[type='text']");

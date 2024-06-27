@@ -5,31 +5,31 @@ console.log("Popup script loaded");
 // Get the current state of the extension (enabled or disabled)
 chrome.storage.sync.get(["enabled"], function (result) {
   const enabled = result.enabled !== undefined ? result.enabled : true;
-  const toggleButton = document.getElementById("toggleButton");
+  const disableButton = document.getElementById("disableButton");
   if (!enabled) {
-    toggleButton.classList.add("off");
-    toggleButton.textContent = "Enable";
+    disableButton.classList.add("off");
+    disableButton.textContent = "Enable";
   } else {
-    toggleButton.classList.remove("off");
-    toggleButton.textContent = "Disable";
+    disableButton.classList.remove("off");
+    disableButton.textContent = "Disable";
   }
   console.log("Initial state:", enabled);
 });
 
 // Add click event listener to the toggle button
-document.getElementById("toggleButton").addEventListener("click", function () {
+document.getElementById("disableButton").addEventListener("click", function () {
   chrome.storage.sync.get(["enabled"], function (result) {
     const enabled = result.enabled !== undefined ? result.enabled : true;
     const newEnabledState = !enabled;
 
     chrome.storage.sync.set({ enabled: newEnabledState }, function () {
-      const toggleButton = document.getElementById("toggleButton");
+      const disableButton = document.getElementById("disableButton");
       if (!newEnabledState) {
-        toggleButton.classList.add("off");
-        toggleButton.textContent = "Enable";
+        disableButton.classList.add("off");
+        disableButton.textContent = "Enable";
       } else {
-        toggleButton.classList.remove("off");
-        toggleButton.textContent = "Disable";
+        disableButton.classList.remove("off");
+        disableButton.textContent = "Disable";
       }
       console.log("New state:", newEnabledState);
 
@@ -55,44 +55,30 @@ document.getElementById("toggleButton").addEventListener("click", function () {
   });
 });
 
-// Add click event listener to the "Detect!" button
-document.getElementById("detectButton").addEventListener("click", function () {
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    if (tabs[0]) {
-      chrome.tabs.sendMessage(
-        tabs[0].id,
-        { action: "detect" },
-        function (response) {
-          if (chrome.runtime.lastError) {
-            console.error(chrome.runtime.lastError.message);
-          } else {
-            console.log("Detect action sent");
-          }
-        }
-      );
-    } else {
-      console.error("No active tab found");
-    }
-  });
-});
+document.addEventListener("DOMContentLoaded", function () {
+  const toggle = document.getElementById("model-toggle");
 
-// Add click event listener to the "Replace!" button
-document.getElementById("replaceButton").addEventListener("click", function () {
-  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    if (tabs[0]) {
+  toggle.addEventListener("click", function () {
+    toggle.classList.toggle("checked");
+    const label = toggle.querySelector(".toggle-label");
+    label.textContent = toggle.classList.contains("checked") ? "2" : "1";
+    updateModel(toggle.classList.contains("checked") ? 2 : 1);
+  });
+
+  function updateModel(model) {
+    console.log(`Switched to model ${model}`);
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       chrome.tabs.sendMessage(
         tabs[0].id,
-        { action: "replace" },
+        { action: "toggleModel" },
         function (response) {
           if (chrome.runtime.lastError) {
             console.error(chrome.runtime.lastError.message);
           } else {
-            console.log("Replace action sent");
+            console.log("Model toggle action sent");
           }
         }
       );
-    } else {
-      console.error("No active tab found");
-    }
-  });
+    });
+  }
 });

@@ -1,4 +1,4 @@
-export async function getResponseDetect(userMessageDetect) {
+export async function getCloudResponseDetect(userMessageDetect) {
   const url = "https://api.openai.com/v1/chat/completions";
   const systemPromptDetect = `You an expert in cybersecurity and data privacy. You are now tasked to detect PII from the given text, using the following taxonomy only:
 
@@ -69,53 +69,7 @@ export async function getResponseDetect(userMessageDetect) {
   }
 }
 
-export async function sampleGetResponse() {
-  const apiKey = await new Promise((resolve, reject) => {
-    chrome.storage.sync.get(["openaiApiKey"], (result) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(result.openaiApiKey);
-      }
-    });
-  });
-  const url = "https://api.openai.com/v1/chat/completions";
-
-  const requestBody = {
-    messages: [
-      {
-        role: "system",
-        content: "You are a helpful assistant designed to output JSON.",
-      },
-      { role: "user", content: "Who won the world series in 2020?" },
-    ],
-    model: "gpt-3.5-turbo-0125",
-    response_format: { type: "json_object" },
-  };
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error("Network response was not ok" + response.statusText);
-    }
-
-    const data = await response.json();
-    console.log(data.choices[0].message.content);
-    return data.choices[0].message.content;
-  } catch (error) {
-    console.error("There has been a problem with your fetch operation:", error);
-  }
-}
-
-export async function getResponseCluster(userMessageCluster) {
+export async function getCloudResponseCluster(userMessageCluster) {
   const apiKey = await new Promise((resolve, reject) => {
     chrome.storage.sync.get(["openaiApiKey"], (result) => {
       if (chrome.runtime.lastError) {
@@ -157,7 +111,7 @@ export async function getResponseCluster(userMessageCluster) {
     response_format: { type: "json_object" },
   };
 
-  console.log("Request Body:", JSON.stringify(requestBody, null, 2)); // Log the request body
+  console.log("Request Body:", JSON.stringify(requestBody, null, 2));
 
   try {
     const response = await fetch(url, {
@@ -184,7 +138,7 @@ export async function getResponseCluster(userMessageCluster) {
   }
 }
 
-export async function getAbstractResponse(
+export async function getCloudAbstractResponse(
   originalMessage,
   currentMessage,
   abstractList

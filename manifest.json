@@ -15,6 +15,7 @@
         "content_helper.js",
         "content.js",
         "openai.js",
+        "ondevice.js",
         "replacePanel.js",
         "buttonWidget.js"
       ],
@@ -30,6 +31,7 @@
     {
       "resources": [
         "openai.js",
+        "ondevice.js",
         "replacePanel.js",
         "ui.css",
         "buttonWidget.js",

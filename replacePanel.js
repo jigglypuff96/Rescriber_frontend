@@ -48,11 +48,11 @@ export function createPIIReplacementPanel(detectedEntities) {
       checkbox.checked = !allChecked;
     });
     document.getElementById("select-all-checkbox").checked = !allChecked;
-    toggleButtonsState();
+    disableButtonsState();
   });
 
   document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
-    checkbox.addEventListener("change", toggleButtonsState);
+    checkbox.addEventListener("change", disableButtonsState);
   });
 
   document.getElementById("replace-btn").addEventListener("click", () => {
@@ -128,7 +128,7 @@ export function createPIIReplacementPanel(detectedEntities) {
     }
   });
 
-  function toggleButtonsState() {
+  function disableButtonsState() {
     const anyChecked = Array.from(
       document.querySelectorAll(".pii-checkbox")
     ).some((cb) => cb.checked);
