@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "PII SecureGuard",
+  "name": "PrivacyGuard",
   "version": "1.0",
   "description": "An extension that revises PII.",
   "permissions": ["activeTab", "storage", "scripting"],

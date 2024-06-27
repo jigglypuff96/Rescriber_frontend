@@ -24,7 +24,7 @@ export function createPIIReplacementPanel(detectedEntities) {
     .join("");
   panel.innerHTML = `
     <div class="pii-replacement-header">
-      <h4>SecureGuard</h4>
+      <h4>PrivacyGuard</h4>
       <div class="right-corner-buttons">
         <button id="highlight-btn">Show tooltip</button>
         <span id="select-all">Select All</span>
