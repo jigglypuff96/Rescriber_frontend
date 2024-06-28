@@ -64,7 +64,7 @@
 
 #pii-list {
   list-style-type: none;
-  padding: 0;
+  padding: 0 15px 0 0; /* Add right padding to accommodate scroll bar */
   margin: 10px 0;
   max-height: 120px;
   overflow-y: scroll;
@@ -115,6 +115,7 @@
 
 .pii-item .pii-checkbox {
   margin-left: 10px;
+  flex-shrink: 0; /* Prevent checkbox from shrinking */
 }
 
 .pii-replacement-footer {
