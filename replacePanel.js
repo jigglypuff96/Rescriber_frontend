@@ -118,7 +118,9 @@ export function createPIIReplacementPanel(detectedEntities) {
   function checkTooltip() {
     const tooltip = document.querySelector(".pii-highlight-tooltip");
     const highlightButton = document.getElementById("highlight-btn");
-    highlightButton.disabled = tooltip !== null;
+    if (tooltip && highlightButton) {
+      highlightButton.disabled = tooltip !== null;
+    }
   }
 
   // Initial check

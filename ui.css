@@ -62,20 +62,30 @@
   background-color: #5a6268;
 }
 
-/* #select-all {
-  color: #007bff;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-#select-all:hover {
-  color: #0056b3;
-} */
-
 #pii-list {
   list-style-type: none;
   padding: 0;
   margin: 10px 0;
+  max-height: 120px;
+  overflow-y: scroll;
+  scrollbar-width: thin; /* For Firefox */
+  /* Force scroll bar visibility */
+  -ms-overflow-style: scrollbar; /* IE 10+ */
+  overflow: -moz-scrollbars-vertical; /* Firefox */
+}
+
+#pii-list::-webkit-scrollbar {
+  width: 10px; /* For Webkit browsers */
+  height: 10px;
+}
+
+#pii-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 5px;
+}
+
+#pii-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .pii-item {

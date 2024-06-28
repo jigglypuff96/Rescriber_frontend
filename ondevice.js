@@ -1,5 +1,5 @@
 export async function getOnDeviceResponseDetect(userMessageDetect) {
-  const response = await fetch("http://localhost:3000/detect", {
+  const response = await fetch("http://localhost:4000/detect", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -13,7 +13,7 @@ export async function getOnDeviceResponseDetect(userMessageDetect) {
 }
 
 export async function getOnDeviceResponseCluster(userMessageCluster) {
-  const response = await fetch("http://localhost:3000/cluster", {
+  const response = await fetch("http://localhost:4000/cluster", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -24,6 +24,7 @@ export async function getOnDeviceResponseCluster(userMessageCluster) {
   const resultString = data.results;
   return data.results;
 }
+
 export async function getOnDeviceAbstractResponse(
   originalMessage,
   currentMessage,
@@ -32,7 +33,7 @@ export async function getOnDeviceAbstractResponse(
   const userMessage = `<Text>${currentMessage}</Text>\n<ProtectedInformation>${abstractList.join(
     ", "
   )}</ProtectedInformation>`;
-  const response = await fetch("http://localhost:3000/abstract", {
+  const response = await fetch("http://localhost:4000/abstract", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
