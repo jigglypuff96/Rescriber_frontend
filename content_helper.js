@@ -477,30 +477,34 @@ window.helper = {
             }
           : data.tempPlaceholder2PiiMappings["no-url"] || {};
 
-      // Recursive function to replace text in all child nodes
-      function replaceTextRecursively(node) {
-        node.childNodes.forEach((child) => {
-          if (child.nodeType === Node.TEXT_NODE) {
-            for (let [placeholder, pii] of Object.entries(piiMappings)) {
-              const regexCurly = new RegExp(`\\[${placeholder}\\]`, "g");
-              const regexPlain = new RegExp(placeholder, "g");
-              const originalText = child.textContent;
-              child.textContent = child.textContent.replace(regexCurly, pii);
-              child.textContent = child.textContent.replace(regexPlain, pii);
-              if (originalText !== child.textContent) {
-                console.log(
-                  `Replaced text in element: ${originalText} -> ${child.textContent}`
-                );
-              }
-            }
-          } else if (child.nodeType === Node.ELEMENT_NODE) {
-            replaceTextRecursively(child);
+      // Function to replace text and highlight PII within <p> tags
+      function replaceAndHighlightTextInParagraphs(element) {
+        const paragraphs = element.querySelectorAll("p");
+        paragraphs.forEach((p) => {
+          let html = p.innerHTML;
+          for (let [placeholder, pii] of Object.entries(piiMappings)) {
+            const regexCurly = new RegExp(`\\[${placeholder}\\]`, "g");
+            const regexPlain = new RegExp(placeholder, "g");
+            const bgColor = element
+              .querySelector(".markdown")
+              .classList.contains("dark")
+              ? "#23a066"
+              : "#ade7cc";
+            html = html.replace(
+              regexCurly,
+              `<span class="highlight-pii-in-displayed-message" style="background-color: ${bgColor};">${pii}</span>`
+            );
+            html = html.replace(
+              regexPlain,
+              `<span class="highlight-pii-in-displayed-message" style="background-color: ${bgColor};">${pii}</span>`
+            );
           }
+          p.innerHTML = html;
         });
       }
 
-      // Start the recursive replacement
-      replaceTextRecursively(element);
+      // Apply the replacement and highlighting to the element
+      replaceAndHighlightTextInParagraphs(element);
     });
   },
 
