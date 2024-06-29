@@ -257,6 +257,9 @@ window.helper = {
     const userMessage = this.getUserInputText();
     this.currentUserMessage = userMessage;
     const entities = await this.getResponseDetect(userMessage);
+    if (!entities) {
+      return;
+    }
     const clusterMessage = this.generateUserMessageCluster(
       userMessage,
       entities
@@ -423,7 +426,7 @@ window.helper = {
         const regex = new RegExp(`(${entity.text})`, "gi");
         textarea.value = textarea.value.replace(
           regex,
-          `{${entity.entity_type}}`
+          `[${entity.entity_type}]`
         );
       });
     });
@@ -431,7 +434,7 @@ window.helper = {
     inputs.forEach((input) => {
       entities.forEach((entity) => {
         const regex = new RegExp(`(${entity.text})`, "gi");
-        input.value = input.value.replace(regex, `{${entity.entity_type}}`);
+        input.value = input.value.replace(regex, `[${entity.entity_type}]`);
       });
     });
 
@@ -447,7 +450,7 @@ window.helper = {
     const regex = new RegExp(`(${piiText})`, "gi");
 
     inputs.forEach((input) => {
-      input.value = input.value.replace(regex, `{${entityType}}`);
+      input.value = input.value.replace(regex, `[${entityType}]`);
     });
   },
 
@@ -479,7 +482,7 @@ window.helper = {
         node.childNodes.forEach((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
             for (let [placeholder, pii] of Object.entries(piiMappings)) {
-              const regexCurly = new RegExp(`\\{${placeholder}\\}`, "g");
+              const regexCurly = new RegExp(`\\[${placeholder}\\]`, "g");
               const regexPlain = new RegExp(placeholder, "g");
               const originalText = child.textContent;
               child.textContent = child.textContent.replace(regexCurly, pii);
@@ -556,6 +559,9 @@ window.helper = {
   },
 
   checkMessageRenderedAndReplace: function (element) {
+    if (!this.enabled) {
+      return;
+    }
     const interval = setInterval(() => {
       const starButton = element?.parentElement?.parentElement
         ?.querySelector('button[aria-haspopup="menu"]')

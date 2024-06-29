@@ -47,14 +47,23 @@ function typingHandler(e) {
 }
 
 async function doneTyping() {
+  if (!window.helper.enabled) {
+    return;
+  }
   showLoadingIndicator();
   const { userMessage, detectedEntities } =
     await window.helper.handleDetectAndUpdatePanel();
-  let noFound = true;
+  let noFound;
+  if (!detectedEntities) {
+    this.updateDetectButtonToIntial();
+    return;
+  }
   if (detectedEntities.length > 0) {
     noFound = false;
+  } else {
+    noFound = true;
   }
-  updateDetectButton(noFound);
+  updateDetectButtonWithResults(noFound);
 }
 
 function showLoadingIndicator() {
@@ -63,8 +72,11 @@ function showLoadingIndicator() {
     detectButton.innerHTML = `<span class="loader"></span>`;
   }
 }
+function updateDetectButtonToIntial() {
+  detectButton.innerHTML = `<span class="detect-circle"></span>`;
+}
 
-function updateDetectButton(noFound) {
+function updateDetectButtonWithResults(noFound) {
   const detectButton = document.getElementById("detect-next-to-input-button");
   if (detectButton) {
     detectButton.innerHTML = `<span class="detected-circle"></span>`;
@@ -126,6 +138,9 @@ chrome.runtime.onMessage.addListener(async function (
 
 // Improved mutation observer to handle new messages dynamically
 const observer = new MutationObserver((mutations) => {
+  if (!window.helper.enabled) {
+    return;
+  }
   mutations.forEach((mutation) => {
     mutation.addedNodes.forEach((node) => {
       if (node.nodeType === Node.ELEMENT_NODE) {
@@ -166,9 +181,9 @@ async function initialize() {
 
 // Call the initialize function when the content script loads and the DOM is ready
 window.addEventListener("load", async () => {
-  initialize();
   await window.helper.getEnabledStatus();
   enabled = window.helper.enabled;
+  initialize();
 
   document
     .querySelectorAll('[data-message-author-role="assistant"]')
