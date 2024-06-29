@@ -460,6 +460,68 @@ window.helper = {
     return conversationIdMatch ? conversationIdMatch[1] : "no-url";
   },
 
+  // showPIITooltip: function (event, placeholder) {
+  //   const tooltip = document.createElement("div");
+  //   tooltip.classList.add("pii-to-placeholder-tooltip");
+  //   tooltip.innerHTML = placeholder;
+  //   tooltip.style.position = "absolute";
+  //   tooltip.style.backgroundColor = "#333";
+  //   tooltip.style.color = "#fff";
+  //   tooltip.style.padding = "5px";
+  //   tooltip.style.borderRadius = "5px";
+  //   tooltip.style.fontSize = "12px";
+  //   tooltip.style.whiteSpace = "nowrap";
+
+  //   document.body.appendChild(tooltip);
+
+  //   const rect = event.target.getBoundingClientRect();
+  //   tooltip.style.left = `${rect.left + window.pageXOffset}px`;
+  //   tooltip.style.top = `${
+  //     rect.top + window.pageYOffset - tooltip.offsetHeight
+  //   }px`;
+
+  //   event.target.addEventListener("mouseleave", () => {
+  //     document.body.removeChild(tooltip);
+  //   });
+  // },
+
+  // showPIITooltip: function (element) {
+  //   const style = document.createElement("style");
+  //   style.innerHTML = `
+  //     .highlight-pii-in-displayed-message {
+  //       position: relative;
+  //     }
+  //     .highlight-pii-in-displayed-message::after {
+  //       content: attr(data-placeholder);
+  //       position: absolute;
+  //       bottom: 100%;
+  //       left: 50%;
+  //       transform: translateX(-50%);
+  //       background-color: black;
+  //       color: white;
+  //       z-index: 10;
+  //       opacity: 0;
+  //       visibility: hidden;
+  //       padding: 5px;
+  //       border-radius: 3px;
+  //       white-space: nowrap;
+  //       transition: opacity 0.2s ease 0s, visibility 0.2s ease 0s;
+  //     }
+  //     .highlight-pii-in-displayed-message:hover::after {
+  //       opacity: 1;
+  //       visibility: visible;
+  //     }
+  //   `;
+  //   document.head.appendChild(style);
+
+  //   const spans = element.querySelectorAll(
+  //     "span.highlight-pii-in-displayed-message"
+  //   );
+  //   spans.forEach((span) => {
+  //     const placeholder = span.getAttribute("data-placeholder");
+  //     span.setAttribute("title", placeholder);
+  //   });
+  // },
   replaceTextInElement: function (element) {
     const activeConversationId = this.getActiveConversationId();
     const storageKey =
@@ -477,34 +539,66 @@ window.helper = {
             }
           : data.tempPlaceholder2PiiMappings["no-url"] || {};
 
-      // Function to replace text and highlight PII within <p> tags
-      function replaceAndHighlightTextInParagraphs(element) {
-        const paragraphs = element.querySelectorAll("p");
-        paragraphs.forEach((p) => {
-          let html = p.innerHTML;
-          for (let [placeholder, pii] of Object.entries(piiMappings)) {
-            const regexCurly = new RegExp(`\\[${placeholder}\\]`, "g");
-            const regexPlain = new RegExp(placeholder, "g");
-            const bgColor = element
-              .querySelector(".markdown")
-              .classList.contains("dark")
-              ? "#23a066"
-              : "#ade7cc";
-            html = html.replace(
-              regexCurly,
-              `<span class="highlight-pii-in-displayed-message" style="background-color: ${bgColor};">${pii}</span>`
-            );
-            html = html.replace(
-              regexPlain,
-              `<span class="highlight-pii-in-displayed-message" style="background-color: ${bgColor};">${pii}</span>`
-            );
+      // Get the background color based on the theme
+      const bgColor = element
+        .querySelector(".markdown")
+        ?.classList?.contains("dark")
+        ? "#23a066"
+        : "#ade7cc";
+
+      // Recursive function to replace text in all child nodes
+      function replaceTextRecursively(node) {
+        node.childNodes.forEach((child) => {
+          if (child.nodeType === Node.TEXT_NODE) {
+            for (let [placeholder, pii] of Object.entries(piiMappings)) {
+              const regexCurly = new RegExp(`\\[${placeholder}\\]`, "g");
+              const regexPlain = new RegExp(placeholder, "g");
+              const originalText = child.textContent;
+
+              // Replace placeholders with PII
+              let replacedText = originalText
+                .replace(regexCurly, pii)
+                .replace(regexPlain, pii);
+
+              // If the text was changed, replace it and wrap it in a span with a tooltip
+              if (originalText !== replacedText) {
+                const span = document.createElement("span");
+                span.className = "highlight-pii-in-displayed-message";
+                span.style.backgroundColor = bgColor;
+                span.textContent = pii;
+                span.title = placeholder;
+
+                // span.addEventListener("mouseenter", (event) =>
+                //   this.showPIITooltip(event, placeholder)
+                // );
+
+                // Split the text to include the span
+                const parts = replacedText.split(pii);
+                const fragment = document.createDocumentFragment();
+                parts.forEach((part, index) => {
+                  if (index > 0) fragment.appendChild(span.cloneNode(true));
+                  fragment.appendChild(document.createTextNode(part));
+                });
+
+                // Replace the original text node with the new fragment
+                child.replaceWith(fragment);
+              }
+            }
+          } else if (child.nodeType === Node.ELEMENT_NODE) {
+            replaceTextRecursively(child);
           }
-          p.innerHTML = html;
         });
       }
 
-      // Apply the replacement and highlighting to the element
-      replaceAndHighlightTextInParagraphs(element);
+      if (element.matches('[data-message-author-role="assistant"]')) {
+        // Find all <p> tags within the assistant message element and process them
+        element.querySelectorAll("p").forEach((p) => {
+          replaceTextRecursively(p);
+        });
+      } else if (element.matches('[data-message-author-role="user"]')) {
+        // Directly process the user message element
+        replaceTextRecursively(element);
+      }
     });
   },
 
@@ -563,6 +657,14 @@ window.helper = {
   },
 
   checkMessageRenderedAndReplace: function (element) {
+    if (element.matches('[data-message-author-role="user"]')) {
+      console.log("!!!!!!!!!!!!user message ");
+      this.currentUserMessage = element;
+    }
+
+    if (element.matches('[data-message-author-role="assistant"]')) {
+      console.log("~~~~assistant message ");
+    }
     if (!this.enabled) {
       return;
     }
@@ -574,6 +676,7 @@ window.helper = {
       if (starButton) {
         console.log("Message rendering complete, performing text replacement");
         this.replaceTextInElement(element);
+        this.replaceTextInElement(this.currentUserMessage);
 
         const activeConversationId = this.getActiveConversationId();
         if (activeConversationId !== "no-url") {

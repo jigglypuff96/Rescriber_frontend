@@ -144,14 +144,20 @@ const observer = new MutationObserver((mutations) => {
   mutations.forEach((mutation) => {
     mutation.addedNodes.forEach((node) => {
       if (node.nodeType === Node.ELEMENT_NODE) {
-        if (node.matches('[data-message-author-role="assistant"]')) {
-          console.log("New assistant message detected:", node); // Log detection
+        if (
+          node.matches(
+            '[data-message-author-role="assistant"], [data-message-author-role="user"]'
+          )
+        ) {
+          console.log("New message detected:", node); // Log detection
           window.helper.checkMessageRenderedAndReplace(node);
         }
         node
-          .querySelectorAll('[data-message-author-role="assistant"]')
+          .querySelectorAll(
+            '[data-message-author-role="assistant"], [data-message-author-role="user"]'
+          )
           .forEach((el) => {
-            console.log("New nested assistant message detected:", el); // Log nested detection
+            console.log("New nested message detected:", el); // Log nested detection
             window.helper.checkMessageRenderedAndReplace(el);
           });
       }
@@ -187,6 +193,11 @@ window.addEventListener("load", async () => {
 
   document
     .querySelectorAll('[data-message-author-role="assistant"]')
+    .forEach((el) => {
+      window.helper.checkMessageRenderedAndReplace(el);
+    });
+  document
+    .querySelectorAll('[data-message-author-role="user"]')
     .forEach((el) => {
       window.helper.checkMessageRenderedAndReplace(el);
     });

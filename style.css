@@ -39,6 +39,6 @@
 }
 
 .highlight-pii-in-displayed-message {
-  background-color: yellow;
-  font-weight: bold;
+  position: relative;
+  cursor: pointer;
 }
