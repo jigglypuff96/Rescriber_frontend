@@ -29,9 +29,6 @@ window.helper = {
 
   setEnabledStatus: async function (newEnabledState) {
     this.enabled = newEnabledState;
-    // chrome.storage.sync.set({ enabled: newEnabledState }, function () {
-    //     this.enabled = newEnabledState
-    //   });
   },
 
   getUserInputText: function () {
@@ -253,11 +250,49 @@ window.helper = {
     return abstractResponse;
   },
 
+  filterEntities: function (entities) {
+    const entityPlaceholders = [
+      "ADDRESS",
+      "IP_ADDRESS",
+      "URL",
+      "SSN",
+      "PHONE_NUMBER",
+      "EMAIL",
+      "DRIVERS_LICENSE",
+      "PASSPORT_NUMBER",
+      "TAXPAYER_IDENTIFICATION_NUMBER",
+      "ID_NUMBER",
+      "NAME",
+      "USERNAME",
+      "GEOLOCATION",
+      "AFFILIATION",
+      "DEMOGRAPHIC_ATTRIBUTE",
+      "TIME",
+      "HEALTH_INFORMATION",
+      "FINANCIAL_INFORMATION",
+      "EDUCATIONAL_RECORD",
+    ];
+
+    // Regular expression to match placeholders like NAME1, [NAME1]
+    const placeholderPattern = new RegExp(
+      `\\b(?:${entityPlaceholders.join(
+        "|"
+      )})\\d+\\b|\\[\\b(?:${entityPlaceholders.join("|")})\\d+\\b\\]`,
+      "g"
+    );
+
+    return entities.filter((entity) => !placeholderPattern.test(entity.text));
+  },
+
   handleDetect: async function () {
     const userMessage = this.getUserInputText();
     this.currentUserMessage = userMessage;
-    const entities = await this.getResponseDetect(userMessage);
+    let entities = await this.getResponseDetect(userMessage);
     if (!entities) {
+      return;
+    }
+    entities = this.filterEntities(entities);
+    if (entities.length === 0) {
       return;
     }
     const clusterMessage = this.generateUserMessageCluster(
@@ -459,69 +494,6 @@ window.helper = {
     const conversationIdMatch = url.match(/\/c\/([a-z0-9-]+)/);
     return conversationIdMatch ? conversationIdMatch[1] : "no-url";
   },
-
-  // showPIITooltip: function (event, placeholder) {
-  //   const tooltip = document.createElement("div");
-  //   tooltip.classList.add("pii-to-placeholder-tooltip");
-  //   tooltip.innerHTML = placeholder;
-  //   tooltip.style.position = "absolute";
-  //   tooltip.style.backgroundColor = "#333";
-  //   tooltip.style.color = "#fff";
-  //   tooltip.style.padding = "5px";
-  //   tooltip.style.borderRadius = "5px";
-  //   tooltip.style.fontSize = "12px";
-  //   tooltip.style.whiteSpace = "nowrap";
-
-  //   document.body.appendChild(tooltip);
-
-  //   const rect = event.target.getBoundingClientRect();
-  //   tooltip.style.left = `${rect.left + window.pageXOffset}px`;
-  //   tooltip.style.top = `${
-  //     rect.top + window.pageYOffset - tooltip.offsetHeight
-  //   }px`;
-
-  //   event.target.addEventListener("mouseleave", () => {
-  //     document.body.removeChild(tooltip);
-  //   });
-  // },
-
-  // showPIITooltip: function (element) {
-  //   const style = document.createElement("style");
-  //   style.innerHTML = `
-  //     .highlight-pii-in-displayed-message {
-  //       position: relative;
-  //     }
-  //     .highlight-pii-in-displayed-message::after {
-  //       content: attr(data-placeholder);
-  //       position: absolute;
-  //       bottom: 100%;
-  //       left: 50%;
-  //       transform: translateX(-50%);
-  //       background-color: black;
-  //       color: white;
-  //       z-index: 10;
-  //       opacity: 0;
-  //       visibility: hidden;
-  //       padding: 5px;
-  //       border-radius: 3px;
-  //       white-space: nowrap;
-  //       transition: opacity 0.2s ease 0s, visibility 0.2s ease 0s;
-  //     }
-  //     .highlight-pii-in-displayed-message:hover::after {
-  //       opacity: 1;
-  //       visibility: visible;
-  //     }
-  //   `;
-  //   document.head.appendChild(style);
-
-  //   const spans = element.querySelectorAll(
-  //     "span.highlight-pii-in-displayed-message"
-  //   );
-  //   spans.forEach((span) => {
-  //     const placeholder = span.getAttribute("data-placeholder");
-  //     span.setAttribute("title", placeholder);
-  //   });
-  // },
   replaceTextInElement: function (element) {
     const activeConversationId = this.getActiveConversationId();
     const storageKey =
@@ -658,12 +630,7 @@ window.helper = {
 
   checkMessageRenderedAndReplace: function (element) {
     if (element.matches('[data-message-author-role="user"]')) {
-      console.log("!!!!!!!!!!!!user message ");
       this.currentUserMessage = element;
-    }
-
-    if (element.matches('[data-message-author-role="assistant"]')) {
-      console.log("~~~~assistant message ");
     }
     if (!this.enabled) {
       return;
