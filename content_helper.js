@@ -512,11 +512,15 @@ window.helper = {
           : data.tempPlaceholder2PiiMappings["no-url"] || {};
 
       // Get the background color based on the theme
-      const bgColor = element
-        .querySelector(".markdown")
-        ?.classList?.contains("dark")
+      const bgColor = document.childNodes[1].classList.contains("dark")
         ? "#23a066"
         : "#ade7cc";
+
+      const placeholderBgColor = document.childNodes[1].classList.contains(
+        "dark"
+      )
+        ? "rgb(213 44 126)"
+        : "rgb(231 185 207)";
 
       // Recursive function to replace text in all child nodes
       function replaceTextRecursively(node) {
@@ -538,11 +542,7 @@ window.helper = {
                 span.className = "highlight-pii-in-displayed-message";
                 span.style.backgroundColor = bgColor;
                 span.textContent = pii;
-                span.title = placeholder;
-
-                // span.addEventListener("mouseenter", (event) =>
-                //   this.showPIITooltip(event, placeholder)
-                // );
+                span.setAttribute("data-placeholder", placeholder);
 
                 // Split the text to include the span
                 const parts = replacedText.split(pii);
@@ -562,15 +562,30 @@ window.helper = {
         });
       }
 
+      // Find all <p> tags within the element and process them
       if (element.matches('[data-message-author-role="assistant"]')) {
-        // Find all <p> tags within the assistant message element and process them
         element.querySelectorAll("p").forEach((p) => {
           replaceTextRecursively(p);
         });
       } else if (element.matches('[data-message-author-role="user"]')) {
-        // Directly process the user message element
         replaceTextRecursively(element);
       }
+
+      // After replacing text, add event listeners for the placeholders
+      const spans = element.querySelectorAll(
+        "span.highlight-pii-in-displayed-message"
+      );
+      spans.forEach((span) => {
+        const placeholder = span.getAttribute("data-placeholder");
+        span.addEventListener("mouseenter", () => {
+          span.textContent = placeholder;
+          span.style.backgroundColor = placeholderBgColor;
+        });
+        span.addEventListener("mouseleave", () => {
+          span.textContent = piiMappings[placeholder];
+          span.style.backgroundColor = bgColor;
+        });
+      });
     });
   },
 
