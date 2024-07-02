@@ -51,8 +51,9 @@ async function doneTyping() {
     return;
   }
   showLoadingIndicator();
-  const { userMessage, detectedEntities } =
-    await window.helper.handleDetectAndUpdatePanel();
+  await window.helper.handleDetectAndUpdatePanel();
+  const detectedEntities = window.helper.getCurrentEntities();
+
   let noFound;
   if (!detectedEntities) {
     this.updateDetectButtonToIntial();
@@ -183,6 +184,7 @@ async function initialize() {
   );
   console.log("calling initialize button");
   initializeButton();
+  await window.helper.loadModelState();
 }
 
 // Call the initialize function when the content script loads and the DOM is ready

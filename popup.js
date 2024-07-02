@@ -57,6 +57,17 @@ document.getElementById("disableButton").addEventListener("click", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
   const toggle = document.getElementById("model-toggle");
+  chrome.storage.local.get(["useOnDeviceModel"], function (result) {
+    const useOnDeviceModel =
+      result.useOnDeviceModel !== undefined ? result.useOnDeviceModel : false;
+    if (useOnDeviceModel) {
+      toggle.classList.add("checked");
+      toggle.querySelector(".toggle-label").textContent = "2";
+    } else {
+      toggle.classList.remove("checked");
+      toggle.querySelector(".toggle-label").textContent = "1";
+    }
+  });
 
   toggle.addEventListener("click", function () {
     toggle.classList.toggle("checked");

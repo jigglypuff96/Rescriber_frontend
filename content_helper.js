@@ -14,6 +14,22 @@ window.helper = {
 
   toggleModel: function () {
     this.useOnDeviceModel = !this.useOnDeviceModel;
+    chrome.storage.local.set({ useOnDeviceModel: this.useOnDeviceModel });
+  },
+
+  loadModelState: async function () {
+    this.useOnDeviceModel = await new Promise((resolve, reject) => {
+      chrome.storage.local.get(["useOnDeviceModel"], function (result) {
+        if (chrome.runtime.lastError) {
+          return reject(chrome.runtime.lastError);
+        }
+        resolve(
+          result.useOnDeviceModel !== undefined
+            ? result.useOnDeviceModel
+            : false
+        );
+      });
+    });
   },
 
   getEnabledStatus: async function () {
@@ -190,6 +206,7 @@ window.helper = {
 
   getResponseDetect: async function (userMessage) {
     let entities;
+    console.log("Now using on device model: ", this.useOnDeviceModel);
     if (!this.useOnDeviceModel) {
       const { getCloudResponseDetect } = await import(
         chrome.runtime.getURL("openai.js")
@@ -287,7 +304,7 @@ window.helper = {
   handleDetect: async function () {
     const userMessage = this.getUserInputText();
     this.currentUserMessage = userMessage;
-    let entities = await this.getResponseDetect(userMessage);
+    let entities = await this.getResponseDetect(this.currentUserMessage);
     if (!entities) {
       return;
     }
@@ -296,7 +313,7 @@ window.helper = {
       return;
     }
     const clusterMessage = this.generateUserMessageCluster(
-      userMessage,
+      this.currentUserMessage,
       entities
     );
     let finalClusters = [];
@@ -308,17 +325,18 @@ window.helper = {
       const detectedEntities = this.processEntities(entities, finalClusters);
 
       this.currentEntities = detectedEntities;
-      return { userMessage, detectedEntities };
+      return true;
     }
     const detectedEntities = this.processEntities(entities, finalClusters);
     this.currentEntities = detectedEntities;
-    return { userMessage, detectedEntities };
+    return true;
   },
 
   handleDetectAndHighlight: async function () {
-    const { userMessage, detectedEntities } = await this.handleDetect();
-    this.highlightWords(userMessage, detectedEntities);
-    await this.showReplacementPanel(detectedEntities);
+    if (await this.handleDetect()) {
+      this.highlightWords(this.currentUserMessage, this.currentEntities);
+      await this.showReplacementPanel(this.currentEntities);
+    }
   },
 
   highlightDetectedWords: function () {
@@ -628,11 +646,18 @@ window.helper = {
     await this.updatePIIReplacementPanel(this.currentEntities);
   },
 
+  getCurrentEntities: function () {
+    return this.currentEntities;
+  },
+
   handleDetectAndUpdatePanel: async function () {
-    const { userMessage, detectedEntities } = await this.handleDetect();
-    this.highlightWords(userMessage, detectedEntities);
-    await this.updatePIIReplacementPanel(detectedEntities);
-    return { userMessage, detectedEntities };
+    if (await this.handleDetect()) {
+      this.highlightWords(this.currentUserMessage, this.currentEntities);
+      await this.updatePIIReplacementPanel(this.currentEntities);
+      return;
+    } else {
+      return;
+    }
   },
 
   updatePIIReplacementPanel: async function (detectedEntities) {
