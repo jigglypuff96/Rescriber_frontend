@@ -512,6 +512,25 @@ window.helper = {
     const conversationIdMatch = url.match(/\/c\/([a-z0-9-]+)/);
     return conversationIdMatch ? conversationIdMatch[1] : "no-url";
   },
+
+  getEntitiesByConversationId: function () {
+    const activeConversationId = this.getActiveConversationId();
+    const storageKey =
+      activeConversationId !== "no-url"
+        ? `piiMappings_${activeConversationId}`
+        : null;
+    chrome.storage.local.get(null, (data) => {
+      const piiMappings =
+        activeConversationId !== "no-url"
+          ? {
+              ...data[storageKey],
+              ...data.tempPlaceholder2PiiMappings[`${activeConversationId}`],
+              ...data.tempPlaceholder2PiiMappings["no-url"],
+            }
+          : data.tempPlaceholder2PiiMappings["no-url"] || {};
+      //TODO: convert piiMappings to entities, and update panel based on the current conversationID
+    });
+  },
   replaceTextInElement: function (element) {
     const activeConversationId = this.getActiveConversationId();
     const storageKey =

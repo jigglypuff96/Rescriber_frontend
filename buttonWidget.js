@@ -43,7 +43,7 @@ function observeSendButton() {
   }
 }
 
-function addDetectButton() {
+export function addDetectButton() {
   const sendButton = document.querySelector(
     'button[data-testid="fruitjuice-send-button"]'
   );
@@ -61,6 +61,14 @@ function addDetectButton() {
       event.stopPropagation(); // Prevents the event from bubbling up to parent elements
       window.helper.highlightDetectedAndShowReplacementPanel();
     });
+  } else if (
+    sendButton &&
+    document.getElementById("detect-next-to-input-button")
+  ) {
+    const detectButton = document.querySelector("#detect-next-to-input-button");
+    if (detectButton.innerHTML != `<span class="detect-circle"></span>`) {
+      detectButton.innerHTML = `<span class="detect-circle"></span>`;
+    }
   }
 }
 

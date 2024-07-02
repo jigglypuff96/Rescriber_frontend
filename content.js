@@ -18,7 +18,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
 });
 
-function checkForConversationChange() {
+async function checkForConversationChange() {
   if (!enabled) {
     previousEnabled = enabled;
     return;
@@ -33,6 +33,10 @@ function checkForConversationChange() {
     removeTooltipAndPanel();
     document.removeEventListener("input", typingHandler);
     document.addEventListener("input", typingHandler);
+    const { addDetectButton } = await import(
+      chrome.runtime.getURL("buttonWidget.js")
+    );
+    addDetectButton();
     window.helper.getEnabledStatus();
     enabled = window.helper.enabled;
   }
@@ -97,7 +101,13 @@ function updateDetectButtonWithResults(noFound) {
   }
 }
 
-setInterval(checkForConversationChange, 1000);
+setInterval(async () => {
+  try {
+    await checkForConversationChange();
+  } catch (error) {
+    console.error(error);
+  }
+}, 1000);
 
 function removeTooltipAndPanel() {
   const tooltip = document.querySelector(".pii-highlight-tooltip");
@@ -123,6 +133,9 @@ chrome.runtime.onMessage.addListener(async function (
     window.helper.setEnabledStatus(enabled);
     console.log("Received new state:", enabled);
     sendResponse({ status: "State updated" });
+    const { initializeButton } = await import(
+      chrome.runtime.getURL("buttonWidget.js")
+    );
     initializeButton();
   }
   if (request.action === "detect") {
