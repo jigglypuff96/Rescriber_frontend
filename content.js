@@ -18,17 +18,23 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   }
 });
 
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  if (request.action === "toggleEnabled") {
+    window.helper.toggleEnabled(request.enabled);
+    sendResponse({ status: "Enabled status toggled" });
+  }
+});
+
 async function checkForConversationChange() {
-  if (!enabled) {
-    previousEnabled = enabled;
+  if (!window.helper.enabled) {
     return;
   }
   const newConversationId = window.helper.getActiveConversationId();
   if (
     newConversationId !== currentConversationId ||
-    enabled !== previousEnabled
+    previousEnabled !== window.helper.enabled
   ) {
-    previousEnabled = enabled;
+    previousEnabled = window.helper.enabled;
     currentConversationId = newConversationId;
     removeTooltipAndPanel();
     document.removeEventListener("input", typingHandler);
@@ -37,8 +43,6 @@ async function checkForConversationChange() {
       chrome.runtime.getURL("buttonWidget.js")
     );
     addDetectButton();
-    window.helper.getEnabledStatus();
-    enabled = window.helper.enabled;
   }
 }
 
@@ -192,6 +196,10 @@ chrome.storage.local.get("entityCounts", (data) => {
 
 // Apply replacements on page load
 async function initialize() {
+  chrome.storage.local.set({ enabled: true });
+  window.helper.toggleEnabled(true);
+
+  // chrome.storage.local.set({ useOnDeviceModel: false });
   const { initializeButton } = await import(
     chrome.runtime.getURL("buttonWidget.js")
   );

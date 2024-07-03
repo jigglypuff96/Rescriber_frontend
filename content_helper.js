@@ -16,6 +16,9 @@ window.helper = {
     this.useOnDeviceModel = !this.useOnDeviceModel;
     chrome.storage.local.set({ useOnDeviceModel: this.useOnDeviceModel });
   },
+  toggleEnabled: function (enabledStatus) {
+    this.enabled = enabledStatus;
+  },
 
   loadModelState: async function () {
     this.useOnDeviceModel = await new Promise((resolve, reject) => {
@@ -302,6 +305,9 @@ window.helper = {
   },
 
   handleDetect: async function () {
+    if (!this.enabled) {
+      return;
+    }
     const userMessage = this.getUserInputText();
     this.currentUserMessage = userMessage;
     let entities = await this.getResponseDetect(this.currentUserMessage);
@@ -333,6 +339,9 @@ window.helper = {
   },
 
   handleDetectAndHighlight: async function () {
+    if (!this.enabled) {
+      return;
+    }
     if (await this.handleDetect()) {
       this.highlightWords(this.currentUserMessage, this.currentEntities);
       await this.showReplacementPanel(this.currentEntities);
@@ -340,10 +349,16 @@ window.helper = {
   },
 
   highlightDetectedWords: function () {
+    if (!this.enabled) {
+      return;
+    }
     this.highlightWords(this.currentUserMessage, this.currentEntities);
   },
 
   showReplacementPanel: async function (detectedEntities) {
+    if (!this.enabled) {
+      return;
+    }
     const { createPIIReplacementPanel } = await import(
       chrome.runtime.getURL("replacePanel.js")
     );
@@ -351,6 +366,9 @@ window.helper = {
   },
 
   highlightDetectedAndShowReplacementPanel: function () {
+    if (!this.enabled) {
+      return;
+    }
     this.highlightWords(this.currentUserMessage, this.currentEntities);
     this.showReplacementPanel(this.currentEntities);
   },
