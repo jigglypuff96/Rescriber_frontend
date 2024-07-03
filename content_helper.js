@@ -531,6 +531,7 @@ window.helper = {
       //TODO: convert piiMappings to entities, and update panel based on the current conversationID
     });
   },
+
   replaceTextInElement: function (element) {
     const activeConversationId = this.getActiveConversationId();
     const storageKey =
@@ -559,39 +560,66 @@ window.helper = {
         ? "rgb(213 44 126)"
         : "rgb(231 185 207)";
 
+      function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }
+
       // Recursive function to replace text in all child nodes
       function replaceTextRecursively(node) {
         node.childNodes.forEach((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
+            let originalText = child.textContent;
             for (let [placeholder, pii] of Object.entries(piiMappings)) {
               const regexCurly = new RegExp(`\\[${placeholder}\\]`, "g");
-              const regexPlain = new RegExp(placeholder, "g");
-              const originalText = child.textContent;
+              const regexPlain = new RegExp(`\\b${placeholder}\\b`, "g");
 
-              // Replace placeholders with PII
-              let replacedText = originalText
-                .replace(regexCurly, pii)
-                .replace(regexPlain, pii);
+              originalText = originalText.replace(regexCurly, pii);
+              originalText = originalText.replace(regexPlain, pii);
+            }
 
-              // If the text was changed, replace it and wrap it in a span with a tooltip
-              if (originalText !== replacedText) {
+            if (child.textContent !== originalText) {
+              const fragment = document.createDocumentFragment();
+              let lastIndex = 0;
+
+              // Re-scan the originalText for replaced parts to wrap in spans
+              const combinedRegex = new RegExp(
+                Object.values(piiMappings)
+                  .map((pii) => escapeRegExp(pii))
+                  .join("|"),
+                "g"
+              );
+
+              originalText.replace(combinedRegex, (match, offset) => {
+                // Add the text before the match
+                if (offset > lastIndex) {
+                  fragment.appendChild(
+                    document.createTextNode(
+                      originalText.slice(lastIndex, offset)
+                    )
+                  );
+                }
+
                 const span = document.createElement("span");
                 span.className = "highlight-pii-in-displayed-message";
                 span.style.backgroundColor = bgColor;
-                span.textContent = pii;
+                span.textContent = match;
+
+                const placeholder = Object.keys(piiMappings).find(
+                  (key) => piiMappings[key] === match
+                );
                 span.setAttribute("data-placeholder", placeholder);
 
-                // Split the text to include the span
-                const parts = replacedText.split(pii);
-                const fragment = document.createDocumentFragment();
-                parts.forEach((part, index) => {
-                  if (index > 0) fragment.appendChild(span.cloneNode(true));
-                  fragment.appendChild(document.createTextNode(part));
-                });
+                fragment.appendChild(span);
+                lastIndex = offset + match.length;
+              });
 
-                // Replace the original text node with the new fragment
-                child.replaceWith(fragment);
+              // Add any remaining text after the last match
+              if (lastIndex < originalText.length) {
+                fragment.appendChild(
+                  document.createTextNode(originalText.slice(lastIndex))
+                );
               }
+              child.replaceWith(fragment);
             }
           } else if (child.nodeType === Node.ELEMENT_NODE) {
             replaceTextRecursively(child);
