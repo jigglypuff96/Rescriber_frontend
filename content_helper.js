@@ -557,6 +557,11 @@ window.helper = {
         ? `piiMappings_${activeConversationId}`
         : null;
 
+    if (!chrome || !chrome.storage || !chrome.storage.local) {
+      console.error("Extension context invalidated.");
+      return;
+    }
+
     chrome.storage.local.get(null, (data) => {
       const piiMappings =
         activeConversationId !== "no-url"
@@ -647,9 +652,11 @@ window.helper = {
 
       // Find all <p> tags within the element and process them
       if (element.matches('[data-message-author-role="assistant"]')) {
-        element.querySelectorAll("p").forEach((p) => {
-          replaceTextRecursively(p);
-        });
+        element
+          .querySelectorAll("p, li, div, span, strong, em, u, b, i")
+          .forEach((el) => {
+            replaceTextRecursively(el);
+          });
       } else if (element.matches('[data-message-author-role="user"]')) {
         replaceTextRecursively(element);
       }
