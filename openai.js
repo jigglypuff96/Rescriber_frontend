@@ -15,6 +15,7 @@ export async function getCloudResponseDetect(userMessageDetect) {
   NAME
   USERNAME
   
+  KEYS: Passwords, passkeys, API keys, encryption keys, and any other form of security keys.
   GEOLOCATION: Places and locations, such as cities, provinces, countries, international regions, or named infrastructures (bus stops, bridges, etc.). 
   AFFILIATION: Names of organizations, such as public and private companies, schools, universities, public institutions, prisons, healthcare institutions, non-governmental organizations, churches, etc. 
   DEMOGRAPHIC_ATTRIBUTE: Demographic attributes of a person, such as native language, descent, heritage, ethnicity, nationality, religious or political group, birthmarks, ages, sexual orientation, gender and sex. 
