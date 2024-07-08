@@ -39,6 +39,9 @@ export async function getCloudResponseDetect(userMessageDetect) {
       { role: "user", content: userMessageDetect },
     ],
     temperature: 0,
+    response_format: { type: "json_object" },
+    seed: 40,
+    max_tokens: 4096,
   });
 
   // Retrieve the API key from Chrome storage
@@ -60,6 +63,17 @@ export async function getCloudResponseDetect(userMessageDetect) {
       headers: headers,
       body: body,
     });
+    if (!response.ok) {
+      // If the response is not OK, log the status and the response body
+      const errorText = await response.text();
+      console.error(
+        "Bad Request:",
+        response.status,
+        response.statusText,
+        errorText
+      );
+      return [];
+    }
 
     const data = await response.json();
     const content = JSON.parse(data.choices[0].message.content);
