@@ -1,5 +1,5 @@
 export async function getProvidedApiKey() {
-  const url = "http://localhost:4000/openaiapikey";
+  const url = "https://llmstudy.peach.codes/openaiapikey";
 
   try {
     const response = await fetch(url, {

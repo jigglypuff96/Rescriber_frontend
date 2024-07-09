@@ -97,9 +97,9 @@ function updateDetectButtonWithResults(noFound) {
       detectedCircle.style.backgroundImage = `url(chrome-extension://${extensionId}/images/magnifier5.png)`;
     }
 
-    detectButton.addEventListener("click", () => {
+    detectButton.addEventListener("click", async () => {
       if (detectedCircle) {
-        window.helper.highlightDetectedWords();
+        await window.helper.highlightDetectedWords();
       }
     });
   }
@@ -146,7 +146,7 @@ chrome.runtime.onMessage.addListener(async function (
     window.helper.handleDetectAndHighlight();
   } else if (request.action === "highlight") {
     const userMessage = window.helper.getUserInputText();
-    window.helper.highlightWords(userMessage, detectedEntities);
+    await window.helper.highlightWords(userMessage, detectedEntities);
   } else if (request.action === "replace-single") {
     window.helper.replaceSinglePii(request.piiText, request.entityType);
   } else if (request.action === "replace-all") {

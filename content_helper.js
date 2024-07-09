@@ -255,8 +255,12 @@ window.helper = {
         currentMessage,
         abstractList
       );
-
-      abstractResponse = JSON.parse(abstractResponseResult);
+      const abstractResponseObject = JSON.parse(abstractResponseResult);
+      if (abstractResponseObject) {
+        abstractResponse = abstractResponseObject.text;
+      } else {
+        abstractResponse = undefined;
+      }
     } else {
       const { getOnDeviceAbstractResponse } = await import(
         chrome.runtime.getURL("ondevice.js")
@@ -343,16 +347,16 @@ window.helper = {
       return;
     }
     if (await this.handleDetect()) {
-      this.highlightWords(this.currentUserMessage, this.currentEntities);
+      await this.highlightWords(this.currentUserMessage, this.currentEntities);
       await this.showReplacementPanel(this.currentEntities);
     }
   },
 
-  highlightDetectedWords: function () {
+  highlightDetectedWords: async function () {
     if (!this.enabled) {
       return;
     }
-    this.highlightWords(this.currentUserMessage, this.currentEntities);
+    await this.highlightWords(this.currentUserMessage, this.currentEntities);
   },
 
   showReplacementPanel: async function (detectedEntities) {
@@ -365,11 +369,11 @@ window.helper = {
     await createPIIReplacementPanel(detectedEntities);
   },
 
-  highlightDetectedAndShowReplacementPanel: function () {
+  highlightDetectedAndShowReplacementPanel: async function () {
     if (!this.enabled) {
       return;
     }
-    this.highlightWords(this.currentUserMessage, this.currentEntities);
+    await this.highlightWords(this.currentUserMessage, this.currentEntities);
     this.showReplacementPanel(this.currentEntities);
   },
 
@@ -388,8 +392,14 @@ window.helper = {
     }
   },
 
-  highlightWords: function (userMessage, entities) {
+  highlightWords: async function (userMessage, entities) {
     if (!this.enabled || !userMessage || !entities) return;
+    if (!document.querySelector("#detect-next-to-input-button")) {
+      const { addDetectButton } = await import(
+        chrome.runtime.getURL("buttonWidget.js")
+      );
+      addDetectButton();
+    }
 
     const inputs = document.querySelectorAll("textarea, input[type='text']");
     inputs.forEach((input) => {
@@ -690,11 +700,11 @@ window.helper = {
       abstractList
     );
 
-    if (abstractResponse && abstractResponse.text) {
+    if (abstractResponse) {
       const input = document.querySelector("textarea, input[type='text']");
       if (input) {
-        input.value = abstractResponse.text;
-        this.currentUserMessage = abstractResponse.text;
+        input.value = abstractResponse;
+        this.currentUserMessage = abstractResponse;
         // this.updateDetectedEntities();
         // await this.updatePanelWithCurrentDetection();
       }
@@ -724,7 +734,7 @@ window.helper = {
 
   handleDetectAndUpdatePanel: async function () {
     if (await this.handleDetect()) {
-      this.highlightWords(this.currentUserMessage, this.currentEntities);
+      await this.highlightWords(this.currentUserMessage, this.currentEntities);
       await this.updatePIIReplacementPanel(this.currentEntities);
       return;
     } else {

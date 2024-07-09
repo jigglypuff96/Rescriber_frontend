@@ -57,9 +57,9 @@ export function addDetectButton() {
     document.body.appendChild(detectButton);
 
     // Add event listener to handle click action
-    detectButton.addEventListener("click", (event) => {
+    detectButton.addEventListener("click", async (event) => {
       event.stopPropagation(); // Prevents the event from bubbling up to parent elements
-      window.helper.highlightDetectedAndShowReplacementPanel();
+      await window.helper.highlightDetectedAndShowReplacementPanel();
     });
   } else if (
     sendButton &&

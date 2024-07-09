@@ -111,9 +111,11 @@ export function createPIIReplacementPanel(detectedEntities) {
     panel.style.display = "none";
   });
 
-  document.getElementById("highlight-btn").addEventListener("click", () => {
-    window.helper.highlightDetectedWords();
-  });
+  document
+    .getElementById("highlight-btn")
+    .addEventListener("click", async () => {
+      await window.helper.highlightDetectedWords();
+    });
 
   function checkTooltip() {
     const tooltip = document.querySelector(".pii-highlight-tooltip");
