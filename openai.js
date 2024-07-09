@@ -1,3 +1,28 @@
+import { getProvidedApiKey } from "./getProvidedApiKey.js";
+
+async function getApiKey() {
+  // Retrieve the API key from Chrome storage
+  const { apiOption, openaiApiKey } = await new Promise((resolve, reject) => {
+    chrome.storage.sync.get(["apiOption", "openaiApiKey"], (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+
+  let apiKey = openaiApiKey;
+  if (apiOption === "provided") {
+    apiKey = await getProvidedApiKey();
+  }
+
+  if (!apiKey) {
+    console.error("No API key available");
+    return [];
+  }
+  return apiKey;
+}
 export async function getCloudResponseDetect(userMessageDetect) {
   const url = "https://api.openai.com/v1/chat/completions";
   const systemPromptDetect = `You an expert in cybersecurity and data privacy. You are now tasked to detect PII from the given text, using the following taxonomy only:
@@ -44,16 +69,7 @@ export async function getCloudResponseDetect(userMessageDetect) {
     max_tokens: 4096,
   });
 
-  // Retrieve the API key from Chrome storage
-  const apiKey = await new Promise((resolve, reject) => {
-    chrome.storage.sync.get(["openaiApiKey"], (result) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(result.openaiApiKey);
-      }
-    });
-  });
+  const apiKey = await getApiKey();
 
   headers["Authorization"] = `Bearer ${apiKey}`;
 
@@ -85,15 +101,7 @@ export async function getCloudResponseDetect(userMessageDetect) {
 }
 
 export async function getCloudResponseCluster(userMessageCluster) {
-  const apiKey = await new Promise((resolve, reject) => {
-    chrome.storage.sync.get(["openaiApiKey"], (result) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(result.openaiApiKey);
-      }
-    });
-  });
+  const apiKey = await getApiKey();
   const url = "https://api.openai.com/v1/chat/completions";
   const systemPromptCluster = `For the given message, find ALL segments of the message with the same contextual meaning as the given PII. Consider segments that are semantically related or could be inferred from the original PII or share a similar context or meaning. List all of them in a list, and each segment should only appear once in each list.  Please return only in JSON format. Each PII provided will be a key, and its value would be the list PIIs (include itself) that has the same contextual meaning.
 
@@ -177,16 +185,7 @@ export async function getCloudAbstractResponse(
     temperature: 0,
   });
 
-  // Retrieve the API key from Chrome storage
-  const apiKey = await new Promise((resolve, reject) => {
-    chrome.storage.sync.get(["openaiApiKey"], (result) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(result.openaiApiKey);
-      }
-    });
-  });
+  const apiKey = await getApiKey();
 
   headers["Authorization"] = `Bearer ${apiKey}`;
 

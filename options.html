@@ -28,8 +28,17 @@
   </head>
   <body>
     <h1>Extension Options</h1>
-    <label for="apiKey" class="input-field">Your OpenAI API Key:</label>
+    <label class="input-field">
+      <input type="radio" name="apiOption" value="own" checked /> Use your own
+      OpenAI API key:
+    </label>
     <input type="text" id="apiKey" class="input-field" />
+
+    <label class="input-field">
+      <input type="radio" name="apiOption" value="provided" /> Use provided key
+      (testing only)
+    </label>
+
     <button id="saveButton" class="save-button">Save</button>
 
     <script src="options.js"></script>

@@ -16,6 +16,7 @@
         "content.js",
         "openai.js",
         "ondevice.js",
+        "getProvidedApiKey.js",
         "replacePanel.js",
         "buttonWidget.js"
       ],
@@ -35,6 +36,7 @@
         "replacePanel.js",
         "ui.css",
         "buttonWidget.js",
+        "getProvidedApiKey.js",
         "images/check4.png",
         "images/magnifier5.png",
         "images/revert.jpg"
