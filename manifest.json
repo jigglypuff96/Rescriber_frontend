@@ -10,7 +10,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://chatgpt.com/*"],
       "js": [
         "content_helper.js",
         "content.js",
@@ -41,7 +41,7 @@
         "images/magnifier5.png",
         "images/revert.jpg"
       ],
-      "matches": ["<all_urls>"]
+      "matches": ["https://chatgpt.com/*"]
     }
   ]
 }

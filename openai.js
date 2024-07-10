@@ -66,7 +66,6 @@ export async function getCloudResponseDetect(userMessageDetect) {
     temperature: 0,
     response_format: { type: "json_object" },
     seed: 40,
-    max_tokens: 4096,
   });
 
   const apiKey = await getApiKey();
