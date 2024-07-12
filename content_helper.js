@@ -327,7 +327,7 @@ window.helper = {
       entities
     );
     let finalClusters = [];
-    if (clusterMessage) {
+    if (clusterMessage && !this.useOnDeviceModel) {
       const clustersResponse = await this.getResponseCluster(clusterMessage);
       const clusters = JSON.parse(clustersResponse);
       const { finalClusters, associatedGroups } =
