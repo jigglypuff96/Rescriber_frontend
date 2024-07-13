@@ -12,9 +12,17 @@ window.helper = {
   previousEntities: [],
   useOnDeviceModel: false,
 
-  toggleModel: function () {
+  toggleModel: async function () {
     this.useOnDeviceModel = !this.useOnDeviceModel;
     chrome.storage.local.set({ useOnDeviceModel: this.useOnDeviceModel });
+    const panel = document.getElementById("pii-replacement-panel");
+    if (panel) {
+      const { updateModelNumberInPanel } = await import(
+        chrome.runtime.getURL("replacePanel.js")
+      );
+      const modelNumber = window.helper.useOnDeviceModel ? 2 : 1;
+      updateModelNumberInPanel(modelNumber);
+    }
   },
   toggleEnabled: function (enabledStatus) {
     this.enabled = enabledStatus;
@@ -371,7 +379,8 @@ window.helper = {
     const { createPIIReplacementPanel } = await import(
       chrome.runtime.getURL("replacePanel.js")
     );
-    await createPIIReplacementPanel(detectedEntities);
+    const modelNumber = window.helper.useOnDeviceModel ? 2 : 1;
+    await createPIIReplacementPanel(detectedEntities, modelNumber);
   },
 
   highlightDetectedAndShowReplacementPanel: async function () {

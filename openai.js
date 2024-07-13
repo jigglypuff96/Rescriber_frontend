@@ -1,5 +1,3 @@
-import { getProvidedApiKey } from "./getProvidedApiKey.js";
-
 async function getApiKey() {
   // Retrieve the API key from Chrome storage
   const { apiOption, openaiApiKey } = await new Promise((resolve, reject) => {
@@ -12,6 +10,9 @@ async function getApiKey() {
     });
   });
 
+  const { getProvidedApiKey } = await import(
+    chrome.runtime.getURL("getProvidedApiKey.js")
+  );
   let apiKey = openaiApiKey;
   if (apiOption === "provided") {
     apiKey = await getProvidedApiKey();

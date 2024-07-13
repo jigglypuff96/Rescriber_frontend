@@ -11,9 +11,13 @@ const doneTypingInterval = 1000;
 
 console.log("Content script loaded!");
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(async function (
+  request,
+  sender,
+  sendResponse
+) {
   if (request.action === "toggleModel") {
-    window.helper.toggleModel();
+    await window.helper.toggleModel();
     sendResponse({ status: "Model toggled" });
   }
 });

@@ -1,4 +1,4 @@
-export function createPIIReplacementPanel(detectedEntities) {
+export function createPIIReplacementPanel(detectedEntities, modelNumber) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.type = "text/css";
@@ -11,6 +11,8 @@ export function createPIIReplacementPanel(detectedEntities) {
     panel.id = "pii-replacement-panel";
     panel.classList.add("pii-replacement-panel");
     document.body.appendChild(panel);
+  } else if (panel.style.display === "none") {
+    panel.style.display = "initial";
   }
 
   const piiList = detectedEntities
@@ -24,7 +26,14 @@ export function createPIIReplacementPanel(detectedEntities) {
     .join("");
   panel.innerHTML = `
     <div class="pii-replacement-header">
-      <h4>PrivacyGuard</h4>
+      <div class="name-model-info">
+        <div class="tool-name">
+          <p>PrivacyGuard</p>
+        </div>
+        <div class="tool-model-number">
+          <p>Model ${modelNumber}</p>
+        </div>
+      </div> 
       <div class="right-corner-buttons">
         <button id="highlight-btn">Show tooltip</button>
         <span id="select-all">Select All</span>
@@ -189,5 +198,14 @@ export function createPIIReplacementPanel(detectedEntities) {
         checkbox.checked = false;
       }
     });
+  }
+}
+
+export function updateModelNumberInPanel(modelNumber) {
+  const modelNumberElement = document.querySelector(
+    "#pii-replacement-panel .tool-model-number p"
+  );
+  if (modelNumberElement) {
+    modelNumberElement.textContent = `Model ${modelNumber}`;
   }
 }
