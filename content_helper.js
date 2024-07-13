@@ -178,9 +178,14 @@ window.helper = {
     });
 
     entities.forEach((entity) => {
-      entity.entity_type =
-        this.pii2PlaceholderMappings[activeConversationId][entity.text] ||
-        entity.entity_type;
+      if (
+        // If this.pii2PlaceholderMappings is not undefined
+        this.pii2PlaceholderMappings &&
+        this.pii2PlaceholderMappings[activeConversationId]
+      ) {
+        entity.entity_type =
+          this.pii2PlaceholderMappings[activeConversationId][entity.text];
+      }
     });
 
     entityCounts[activeConversationId] = localEntityCounts;

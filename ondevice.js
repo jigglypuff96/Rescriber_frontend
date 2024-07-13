@@ -6,9 +6,21 @@ export async function getOnDeviceResponseDetect(userMessageDetect) {
     },
     body: JSON.stringify({ message: userMessageDetect }),
   });
+
   const data = await response.json();
-  const resultString = data.results;
-  const jsonObject = JSON.parse(resultString);
+  let jsonObject;
+  // To receive response from both JS and Python backend
+  if (data.results !== undefined || null) {
+    if (data.results == "") {
+      return;
+    }
+    jsonObject = JSON.parse(data.results);
+  } else {
+    if (data == "") {
+      return;
+    }
+    jsonObject = JSON.parse(data);
+  }
   return jsonObject.results;
 }
 
