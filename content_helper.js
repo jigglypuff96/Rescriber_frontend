@@ -361,6 +361,7 @@ window.helper = {
       this.currentEntities = detectedEntities;
       return true;
     }
+    finalClusters = entities.map((entity) => [entity.text]);
     const detectedEntities = this.processEntities(entities, finalClusters);
     this.currentEntities = detectedEntities;
     return true;
