@@ -310,15 +310,26 @@ window.helper = {
       "EDUCATIONAL_RECORD",
     ];
 
-    // Regular expression to match placeholders like NAME1, [NAME1]
     const placeholderPattern = new RegExp(
       `\\b(?:${entityPlaceholders.join(
         "|"
-      )})\\d+\\b|\\[\\b(?:${entityPlaceholders.join("|")})\\d+\\b\\]`,
-      "g"
+      )})\\d+\\b|\\[(?:${entityPlaceholders.join("|")})\\d+\\]`,
+      "gi"
     );
 
-    return entities.filter((entity) => !placeholderPattern.test(entity.text));
+    return entities.filter((entity) => {
+      const match = placeholderPattern.test(entity.text);
+
+      // Additional check for placeholders
+      const additionalCheck = entityPlaceholders.some((placeholder) =>
+        new RegExp(
+          `\\b${placeholder}\\d+\\b|\\[${placeholder}\\d+\\]`,
+          "gi"
+        ).test(entity.text)
+      );
+
+      return !(match || additionalCheck);
+    });
   },
 
   handleDetect: async function () {
@@ -421,7 +432,10 @@ window.helper = {
         let highlightedValue = input.value;
 
         entities.forEach((entity) => {
-          const regex = new RegExp(`(${entity.text})`, "gi");
+          const regex = new RegExp(
+            `(\\[?${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?)`,
+            "gi"
+          );
           highlightedValue = this.replaceTextWithHighlight(
             highlightedValue,
             regex

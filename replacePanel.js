@@ -57,7 +57,6 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
     .addEventListener("change", () => {
       const allChecked = document.getElementById("select-all-checkbox").checked;
       document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
-        // checkbox.checked = true;
         checkbox.checked = allChecked;
       });
       toggleButtonsState();
@@ -113,7 +112,9 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
 
   document.getElementById("revert-btn").addEventListener("click", () => {
     window.helper.revertToPreviousState();
-    document.getElementById("revert-btn").disabled = true;
+    if (document.getElementById("revert-btn")) {
+      document.getElementById("revert-btn").disabled = true;
+    }
   });
 
   document.getElementById("close-panel-btn").addEventListener("click", () => {
@@ -180,6 +181,21 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
     ).some((cb) => cb.checked);
     document.getElementById("replace-btn").disabled = !anyChecked;
     document.getElementById("abstract-btn").disabled = !anyChecked;
+    updateRevertButtonState();
+  }
+
+  function updateRevertButtonState() {
+    const revertButton = document.getElementById("revert-btn");
+    if (checkMessageStateChanged()) {
+      revertButton.disabled = false;
+    } else {
+      revertButton.disabled = true;
+    }
+  }
+
+  function checkMessageStateChanged() {
+    const input = document.querySelector("textarea, input[type='text']");
+    return input.value !== window.helper.previousUserMessage;
   }
 
   function showAbstractLoading() {
@@ -199,6 +215,12 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
       }
     });
   }
+
+  const inputField = document.querySelector("textarea, input[type='text']");
+  if (inputField) {
+    inputField.addEventListener("input", updateRevertButtonState);
+  }
+  updateRevertButtonState();
 }
 
 export function updateModelNumberInPanel(modelNumber) {
