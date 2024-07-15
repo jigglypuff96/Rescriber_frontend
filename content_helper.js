@@ -340,11 +340,13 @@ window.helper = {
     this.currentUserMessage = userMessage;
     let entities = await this.getResponseDetect(this.currentUserMessage);
     if (!entities) {
-      return;
+      this.currentEntities = []
+      return false;
     }
     entities = this.filterEntities(entities);
     if (entities.length === 0) {
-      return;
+      this.currentEntities = []
+      return false;
     }
     const clusterMessage = this.generateUserMessageCluster(
       this.currentUserMessage,
@@ -818,6 +820,7 @@ window.helper = {
       await this.updatePIIReplacementPanel(this.currentEntities);
       return;
     } else {
+      await this.updatePIIReplacementPanel(this.currentEntities);
       return;
     }
   },
