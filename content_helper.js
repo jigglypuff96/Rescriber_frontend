@@ -628,15 +628,6 @@ window.helper = {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
-  replaceSinglePii: function (piiText, entityType) {
-    const inputs = document.querySelectorAll("textarea, input[type='text']");
-    const regex = new RegExp(`(${piiText})`, "gi");
-
-    inputs.forEach((input) => {
-      input.value = input.value.replace(regex, `[${entityType}]`);
-    });
-  },
-
   getActiveConversationId: function () {
     const url = window.location.href;
     const conversationIdMatch = url.match(/\/c\/([a-z0-9-]+)/);

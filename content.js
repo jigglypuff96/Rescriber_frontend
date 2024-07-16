@@ -22,9 +22,22 @@ chrome.runtime.onMessage.addListener(async function (
   }
 });
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+chrome.runtime.onMessage.addListener(async function (
+  request,
+  sender,
+  sendResponse
+) {
   if (request.action === "toggleEnabled") {
     window.helper.toggleEnabled(request.enabled);
+    const { addDetectButton, removeDetectButton } = await import(
+      chrome.runtime.getURL("buttonWidget.js")
+    );
+    if (request.enabled) {
+      addDetectButton();
+    } else {
+      removeDetectButton();
+    }
+
     sendResponse({ status: "Enabled status toggled" });
   }
 });
@@ -128,35 +141,6 @@ function removeTooltipAndPanel() {
     panel.remove();
   }
 }
-
-chrome.runtime.onMessage.addListener(async function (
-  request,
-  sender,
-  sendResponse
-) {
-  console.log("Message received:", request);
-
-  if (request.enabled !== undefined) {
-    enabled = request.enabled;
-    window.helper.setEnabledStatus(enabled);
-    console.log("Received new state:", enabled);
-    sendResponse({ status: "State updated" });
-    const { initializeButton } = await import(
-      chrome.runtime.getURL("buttonWidget.js")
-    );
-    initializeButton();
-  }
-  if (request.action === "detect") {
-    window.helper.handleDetectAndHighlight();
-  } else if (request.action === "highlight") {
-    const userMessage = window.helper.getUserInputText();
-    await window.helper.highlightWords(userMessage, detectedEntities);
-  } else if (request.action === "replace-single") {
-    window.helper.replaceSinglePii(request.piiText, request.entityType);
-  } else if (request.action === "replace-all") {
-    window.helper.replaceWords(detectedEntities);
-  }
-});
 
 // Improved mutation observer to handle new messages dynamically
 const observer = new MutationObserver((mutations) => {

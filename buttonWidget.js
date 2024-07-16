@@ -72,7 +72,7 @@ export function addDetectButton() {
   }
 }
 
-function removeDetectButton() {
+export function removeDetectButton() {
   const detectButton = document.getElementById("detect-next-to-input-button");
   if (detectButton) {
     detectButton.remove();
