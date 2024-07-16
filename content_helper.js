@@ -317,7 +317,15 @@ window.helper = {
       "gi"
     );
 
-    return entities.filter((entity) => {
+    // Use a Set to keep track of unique entities
+    const seen = new Set();
+    const filteredEntities = entities.filter((entity) => {
+      const identifier = `${entity.entity_type}:${entity.text}`;
+      if (seen.has(identifier)) {
+        return false; // Skip duplicate entities
+      }
+      seen.add(identifier);
+
       const match = placeholderPattern.test(entity.text);
 
       // Additional check for placeholders
@@ -330,6 +338,8 @@ window.helper = {
 
       return !(match || additionalCheck);
     });
+
+    return filteredEntities;
   },
 
   handleDetect: async function () {
@@ -340,12 +350,12 @@ window.helper = {
     this.currentUserMessage = userMessage;
     let entities = await this.getResponseDetect(this.currentUserMessage);
     if (!entities) {
-      this.currentEntities = []
+      this.currentEntities = [];
       return false;
     }
     entities = this.filterEntities(entities);
     if (entities.length === 0) {
-      this.currentEntities = []
+      this.currentEntities = [];
       return false;
     }
     const clusterMessage = this.generateUserMessageCluster(
@@ -584,21 +594,26 @@ window.helper = {
       this.tempPlaceholder2PiiMappings
     );
 
-    textareas.forEach((textarea) => {
+    // Sort entities by text length in descending order to handle substrings in replacement
+    entities.sort((a, b) => b.text.length - a.text.length);
+
+    const performReplacement = (element, value) => {
       entities.forEach((entity) => {
-        const regex = new RegExp(`(${entity.text})`, "gi");
-        textarea.value = textarea.value.replace(
-          regex,
-          `[${entity.entity_type}]`
+        const regex = new RegExp(
+          `\\b${this.replacementEscapeRegExp(entity.text)}\\b`,
+          "gi"
         );
+        value = value.replace(regex, `[${entity.entity_type}]`);
       });
+      element.value = value;
+    };
+
+    textareas.forEach((textarea) => {
+      performReplacement(textarea, textarea.value);
     });
 
     inputs.forEach((input) => {
-      entities.forEach((entity) => {
-        const regex = new RegExp(`(${entity.text})`, "gi");
-        input.value = input.value.replace(regex, `[${entity.entity_type}]`);
-      });
+      performReplacement(input, input.value);
     });
 
     // Remove tooltips after replacement
@@ -606,6 +621,11 @@ window.helper = {
       ".pii-highlight-tooltip"
     );
     existingTooltips.forEach((existingTooltip) => existingTooltip.remove());
+  },
+
+  replacementEscapeRegExp: function (string) {
+    // Make sure things like replacing Female to Fe[Gender1] don't happen when Male is detected as Gender1, and user chooses to only replace male
+    return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
   replaceSinglePii: function (piiText, entityType) {
