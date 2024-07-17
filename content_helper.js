@@ -607,7 +607,12 @@ window.helper = {
       if (input.value === userMessage) {
         let highlightedValue = input.value;
 
-        entities.forEach((entity) => {
+        // Create a copy of the entities array and sort the copy by the length of their text property in descending order
+        const sortedEntities = [...entities].sort(
+          (a, b) => b.text.length - a.text.length
+        );
+
+        sortedEntities.forEach((entity) => {
           const regex = new RegExp(
             `(\\[?${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?)`,
             "gi"
