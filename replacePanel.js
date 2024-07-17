@@ -186,6 +186,7 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
 
   function updateRevertButtonState() {
     const revertButton = document.getElementById("revert-btn");
+    if (!revertButton) return;
     if (checkMessageStateChanged()) {
       revertButton.disabled = false;
     } else {

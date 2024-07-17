@@ -176,11 +176,11 @@ observer.observe(document.body, {
   subtree: true,
 });
 
-// Load entity counts from storage
-chrome.storage.local.get("entityCounts", (data) => {
-  entityCounts = data.entityCounts || {};
-  console.log("Loaded entity counts:", entityCounts);
-});
+// // Load entity counts from storage
+// chrome.storage.local.get("entityCounts", (data) => {
+//   entityCounts = data.entityCounts || {};
+//   console.log("Loaded entity counts:", entityCounts);
+// });
 
 // Apply replacements on page load
 async function initialize() {

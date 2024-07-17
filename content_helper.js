@@ -146,7 +146,40 @@ window.helper = {
     return { finalClusters, associatedGroups };
   },
 
-  processEntities: function (entities, finalClusters) {
+  findKeyByValue: function (mapping, value) {
+    for (let [k, v] of Object.entries(mapping)) {
+      if (v === value) {
+        return { exists: true, key: k }; // Returns true and the key if the value is found
+      }
+    }
+    return { exists: false, key: null }; // Returns false and null if the value is not found
+  },
+
+  getFromStorage: function (key) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get(key, (result) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  },
+
+  setToStorage: function (data) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set(data, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
+    });
+  },
+
+  processEntities: async function (entities, finalClusters) {
     const activeConversationId = this.getActiveConversationId() || "no-url";
     if (!entityCounts[activeConversationId]) {
       entityCounts[activeConversationId] = {};
@@ -154,47 +187,73 @@ window.helper = {
 
     const localEntityCounts = { ...entityCounts[activeConversationId] };
 
-    finalClusters.forEach((cluster) => {
-      const entityType = entities
-        .find((entity) => cluster.includes(entity.text))
-        ?.entity_type.replace(/[0-9]/g, "");
-      if (entityType) {
-        if (!localEntityCounts[entityType]) {
-          localEntityCounts[entityType] = 1;
-        } else {
-          localEntityCounts[entityType]++;
-        }
+    for (const cluster of finalClusters) {
+      for (const entity of entities) {
+        if (cluster.includes(entity.text)) {
+          const data = await this.getFromStorage(
+            `piiMappings_${activeConversationId}`
+          );
+          const entity2PiiMapping = data[`piiMappings_${activeConversationId}`];
 
-        const placeholder = `${entityType}${localEntityCounts[entityType]}`;
-        if (!this.pii2PlaceholderMappings[activeConversationId]) {
-          this.pii2PlaceholderMappings[activeConversationId] = {};
-        }
-        if (!this.tempMappings[activeConversationId]) {
-          this.tempMappings[activeConversationId] = {};
-        }
-        cluster.forEach((item) => {
-          if (!this.pii2PlaceholderMappings[activeConversationId][item]) {
+          let placeholder;
+          if (this.findKeyByValue(entity2PiiMapping, entity.text).exists) {
+            placeholder = this.findKeyByValue(
+              entity2PiiMapping,
+              entity.text
+            ).key;
+          } else {
+            if (
+              this.pii2PlaceholderMappings[activeConversationId] &&
+              this.pii2PlaceholderMappings[activeConversationId].hasOwnProperty(
+                entity.text
+              )
+            ) {
+              placeholder =
+                this.pii2PlaceholderMappings[activeConversationId][entity.text];
+            } else if (
+              this.tempMappings[activeConversationId] &&
+              this.tempMappings[activeConversationId].hasOwnProperty(
+                entity.text
+              )
+            ) {
+              placeholder =
+                this.tempMappings[activeConversationId][entity.text];
+            } else {
+              const entityType = entity.entity_type.replace(/[0-9]/g, "");
+              if (entityType) {
+                localEntityCounts[entityType] =
+                  (localEntityCounts[entityType] || 0) + 1;
+                placeholder = `${entityType}${localEntityCounts[entityType]}`;
+              }
+            }
+          }
+
+          if (!this.pii2PlaceholderMappings[activeConversationId]) {
+            this.pii2PlaceholderMappings[activeConversationId] = {};
+          }
+          if (!this.tempMappings[activeConversationId]) {
+            this.tempMappings[activeConversationId] = {};
+          }
+          cluster.forEach((item) => {
             this.pii2PlaceholderMappings[activeConversationId][item] =
               placeholder;
-          }
-
-          if (!this.tempMappings[activeConversationId][placeholder]) {
             this.tempMappings[activeConversationId][placeholder] = item;
-          }
-        });
+          });
+          // Break since we want to stop at the first match within a cluster
+          break;
+        }
       }
-    });
+    }
 
-    entities.forEach((entity) => {
+    for (const entity of entities) {
       if (
-        // If this.pii2PlaceholderMappings is not undefined
         this.pii2PlaceholderMappings &&
         this.pii2PlaceholderMappings[activeConversationId]
       ) {
         entity.entity_type =
           this.pii2PlaceholderMappings[activeConversationId][entity.text];
       }
-    });
+    }
 
     entityCounts[activeConversationId] = localEntityCounts;
     this.tempPlaceholder2PiiMappings[activeConversationId] = {
@@ -202,23 +261,117 @@ window.helper = {
       ...this.tempMappings[activeConversationId],
     };
 
-    // Save tempPlaceholder2PiiMappings to chrome storage
-    chrome.storage.local.set(
-      { tempPlaceholder2PiiMappings: this.tempPlaceholder2PiiMappings },
-      () => {
-        console.log(
-          "Temporary PII mappings updated:",
-          this.tempPlaceholder2PiiMappings
-        );
-      }
-    );
-
-    chrome.storage.local.set({
+    // Save tempPlaceholder2PiiMappings and pii2PlaceholderMappings to chrome storage
+    await this.setToStorage({
+      tempPlaceholder2PiiMappings: this.tempPlaceholder2PiiMappings,
+    });
+    await this.setToStorage({
       pii2PlaceholderMappings: this.pii2PlaceholderMappings,
     });
 
+    console.log(
+      "Temporary PII mappings updated:",
+      this.tempPlaceholder2PiiMappings
+    );
     return entities;
   },
+
+  // processEntities: function (entities, finalClusters) {
+  //   const activeConversationId = this.getActiveConversationId() || "no-url";
+  //   if (!entityCounts[activeConversationId]) {
+  //     entityCounts[activeConversationId] = {};
+  //   }
+
+  //   const localEntityCounts = { ...entityCounts[activeConversationId] };
+
+  //   finalClusters.forEach((cluster) => {
+  //     for (let i = 0; i < entities.length; i++) {
+  //       const entity = entities[i];
+  //       // Check if the cluster includes the entity's text
+
+  //       if (cluster.includes(entity.text)) {
+  //         let placeholder;
+  //         chrome.storage.local.get(
+  //           `piiMappings_${activeConversationId}`,
+  //           (data) => {
+  //             const entity2PiiMapping =
+  //               data[`piiMappings_${activeConversationId}`];
+  //             if (this.findKeyByValue(entity2PiiMapping, entity.text).exists) {
+  //               placeholder = this.findKeyByValue(
+  //                 entity2PiiMapping,
+  //                 entity.text
+  //               ).key;
+  //             } else {
+  //               const entityType = entity.entity_type.replace(/[0-9]/g, "");
+  //               if (entityType) {
+  //                 if (!localEntityCounts[entityType]) {
+  //                   localEntityCounts[entityType] = 1;
+  //                 } else {
+  //                   localEntityCounts[entityType]++;
+  //                 }
+
+  //                 placeholder = `${entityType}${localEntityCounts[entityType]}`;
+  //               }
+  //             }
+
+  //             if (!this.pii2PlaceholderMappings[activeConversationId]) {
+  //               this.pii2PlaceholderMappings[activeConversationId] = {};
+  //             }
+  //             if (!this.tempMappings[activeConversationId]) {
+  //               this.tempMappings[activeConversationId] = {};
+  //             }
+  //             cluster.forEach((item) => {
+  //               if (!this.pii2PlaceholderMappings[activeConversationId][item]) {
+  //                 this.pii2PlaceholderMappings[activeConversationId][item] =
+  //                   placeholder;
+  //               }
+
+  //               if (!this.tempMappings[activeConversationId][placeholder]) {
+  //                 this.tempMappings[activeConversationId][placeholder] = item;
+  //               }
+  //             });
+  //           }
+  //         );
+
+  //         break;
+  //       }
+  //     }
+  //   });
+
+  //   entities.forEach((entity) => {
+  //     if (
+  //       // If this.pii2PlaceholderMappings is not undefined
+  //       this.pii2PlaceholderMappings &&
+  //       this.pii2PlaceholderMappings[activeConversationId]
+  //     ) {
+  //       entity.entity_type =
+  //         this.pii2PlaceholderMappings[activeConversationId][entity.text];
+  //     }
+  //   });
+
+  //   entityCounts[activeConversationId] = localEntityCounts;
+  //   this.tempPlaceholder2PiiMappings[activeConversationId] = {
+  //     ...this.tempPlaceholder2PiiMappings[activeConversationId],
+  //     ...this.tempMappings[activeConversationId],
+  //   };
+
+  //   // Save tempPlaceholder2PiiMappings to chrome storage
+  //   chrome.storage.local.set(
+  //     { tempPlaceholder2PiiMappings: this.tempPlaceholder2PiiMappings },
+  //     () => {
+  //       console.log(
+  //         "Temporary PII mappings updated:",
+  //         this.tempPlaceholder2PiiMappings
+  //       );
+  //     }
+  //   );
+
+  //   chrome.storage.local.set({
+  //     pii2PlaceholderMappings: this.pii2PlaceholderMappings,
+  //   });
+
+  //   return entities;
+  // },
 
   getResponseDetect: async function (userMessage) {
     let entities;
@@ -368,13 +521,19 @@ window.helper = {
       const clusters = JSON.parse(clustersResponse);
       const { finalClusters, associatedGroups } =
         this.simplifyClustersWithTypes(clusters, entities);
-      const detectedEntities = this.processEntities(entities, finalClusters);
+      const detectedEntities = await this.processEntities(
+        entities,
+        finalClusters
+      );
 
       this.currentEntities = detectedEntities;
       return true;
     }
     finalClusters = entities.map((entity) => [entity.text]);
-    const detectedEntities = this.processEntities(entities, finalClusters);
+    const detectedEntities = await this.processEntities(
+      entities,
+      finalClusters
+    );
     this.currentEntities = detectedEntities;
     return true;
   },
