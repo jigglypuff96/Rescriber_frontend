@@ -133,9 +133,10 @@ export async function getCloudResponseCluster(userMessageCluster) {
     ],
     model: "gpt-3.5-turbo-0125",
     response_format: { type: "json_object" },
+    temperature: 0,
+    seed: 40,
+    top_p: 0.0000000000000000000001,
   };
-
-  // console.log("Request Body:", JSON.stringify(requestBody, null, 2));
 
   try {
     const response = await fetch(url, {
@@ -155,7 +156,10 @@ export async function getCloudResponseCluster(userMessageCluster) {
     }
 
     const data = await response.json();
-    console.log(data.choices[0].message.content);
+    console.log(
+      "cloud model clustering result:",
+      data.choices[0].message.content
+    );
     return data.choices[0].message.content;
   } catch (error) {
     console.error("There has been a problem with your fetch operation:", error);

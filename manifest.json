@@ -11,16 +11,9 @@
   "content_scripts": [
     {
       "matches": ["https://chatgpt.com/*"],
-      "js": [
-        "content_helper.js",
-        "content.js",
-        "openai.js",
-        "ondevice.js",
-        "getProvidedApiKey.js",
-        "replacePanel.js",
-        "buttonWidget.js"
-      ],
-      "css": ["style.css", "ui.css"]
+      "js": ["content_helper.js", "content.js"],
+      "css": ["style.css", "ui.css"],
+      "type": "module"
     }
   ],
   "action": {

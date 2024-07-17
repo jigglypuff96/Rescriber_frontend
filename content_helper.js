@@ -196,7 +196,11 @@ window.helper = {
           const entity2PiiMapping = data[`piiMappings_${activeConversationId}`];
 
           let placeholder;
-          if (this.findKeyByValue(entity2PiiMapping, entity.text).exists) {
+          if (
+            entity2PiiMapping &&
+            entity.text &&
+            this.findKeyByValue(entity2PiiMapping, entity.text).exists
+          ) {
             placeholder = this.findKeyByValue(
               entity2PiiMapping,
               entity.text
