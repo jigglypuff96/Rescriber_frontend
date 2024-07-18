@@ -843,6 +843,11 @@ window.helper = {
             }
           : data.tempPlaceholder2PiiMappings["no-url"] || {};
 
+      // Sort piiMappings by length of values in descending order
+      const sortedPiiMappings = Object.entries(piiMappings).sort(
+        (a, b) => b[1].length - a[1].length
+      );
+
       // Get the background color based on the theme
       const bgColor = document.childNodes[1].classList.contains("dark")
         ? "#23a066"
@@ -863,9 +868,15 @@ window.helper = {
         node.childNodes.forEach((child) => {
           if (child.nodeType === Node.TEXT_NODE) {
             let originalText = child.textContent;
-            for (let [placeholder, pii] of Object.entries(piiMappings)) {
-              const regexCurly = new RegExp(`\\[${placeholder}\\]`, "g");
-              const regexPlain = new RegExp(`\\b${placeholder}\\b`, "g");
+            for (let [placeholder, pii] of sortedPiiMappings) {
+              const regexCurly = new RegExp(
+                `\\[${escapeRegExp(placeholder)}\\]`,
+                "g"
+              );
+              const regexPlain = new RegExp(
+                `\\b${escapeRegExp(placeholder)}\\b`,
+                "g"
+              );
 
               originalText = originalText.replace(regexCurly, pii);
               originalText = originalText.replace(regexPlain, pii);
@@ -877,9 +888,7 @@ window.helper = {
 
               // Re-scan the originalText for replaced parts to wrap in spans
               const combinedRegex = new RegExp(
-                Object.values(piiMappings)
-                  .map((pii) => escapeRegExp(pii))
-                  .join("|"),
+                sortedPiiMappings.map(([, pii]) => escapeRegExp(pii)).join("|"),
                 "g"
               );
 
@@ -898,9 +907,9 @@ window.helper = {
                 span.style.backgroundColor = bgColor;
                 span.textContent = match;
 
-                const placeholder = Object.keys(piiMappings).find(
-                  (key) => piiMappings[key] === match
-                );
+                const placeholder = sortedPiiMappings.find(
+                  ([, value]) => value === match
+                )[0];
                 span.setAttribute("data-placeholder", placeholder);
 
                 fragment.appendChild(span);
@@ -921,7 +930,6 @@ window.helper = {
         });
       }
 
-      // Find all <p> tags within the element and process them
       if (element.matches('[data-message-author-role="assistant"]')) {
         element
           .querySelectorAll("p, li, div, span, strong, em, u, b, i")
