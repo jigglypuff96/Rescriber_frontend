@@ -604,7 +604,8 @@ window.helper = {
 
     const inputs = document.querySelectorAll("textarea, input[type='text']");
     inputs.forEach((input) => {
-      if (input.value === userMessage) {
+      if (true) {
+        //input.value === userMessage
         let highlightedValue = input.value;
 
         // Create a copy of the entities array and sort the copy by the length of their text property in descending order
@@ -614,67 +615,18 @@ window.helper = {
 
         sortedEntities.forEach((entity) => {
           const regex = new RegExp(
-            `(\\[?${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\]?)`,
+            `(${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
             "gi"
           );
-          highlightedValue = this.replaceTextWithHighlight(
-            highlightedValue,
-            regex
+          highlightedValue = highlightedValue.replace(
+            regex,
+            '<span class="highlight">$1</span>'
           );
         });
 
         this.displayHighlight(input, highlightedValue);
       }
     });
-  },
-
-  replaceTextWithHighlight: function (text, regex) {
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = text;
-
-    function replaceTextNode(node) {
-      const matches = node.nodeValue.match(regex);
-      if (matches) {
-        const fragment = document.createDocumentFragment();
-        let lastIndex = 0;
-        matches.forEach((match) => {
-          const index = node.nodeValue.indexOf(match, lastIndex);
-          if (index > lastIndex) {
-            fragment.appendChild(
-              document.createTextNode(
-                node.nodeValue.substring(lastIndex, index)
-              )
-            );
-          }
-          const span = document.createElement("span");
-          span.className = "highlight";
-          span.textContent = match;
-          fragment.appendChild(span);
-          lastIndex = index + match.length;
-        });
-        if (lastIndex < node.nodeValue.length) {
-          fragment.appendChild(
-            document.createTextNode(node.nodeValue.substring(lastIndex))
-          );
-        }
-        node.parentNode.replaceChild(fragment, node);
-      }
-    }
-
-    function traverseNodes(node) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        replaceTextNode(node);
-      } else if (
-        node.nodeType === Node.ELEMENT_NODE &&
-        node.nodeName !== "SPAN"
-      ) {
-        node.childNodes.forEach(traverseNodes);
-      }
-    }
-
-    tempDiv.childNodes.forEach(traverseNodes);
-
-    return tempDiv.innerHTML;
   },
 
   displayHighlight: function (target, highlightedValue) {
@@ -715,10 +667,6 @@ window.helper = {
         rect.top + window.scrollY + target.offsetHeight
       }px`;
     }
-
-    // target.addEventListener("blur", () => {
-    //   tooltip.remove();
-    // });
 
     target.addEventListener("input", () => {
       tooltip.remove();
