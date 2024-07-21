@@ -615,7 +615,7 @@ window.helper = {
 
         sortedEntities.forEach((entity) => {
           const regex = new RegExp(
-            `(${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+            `\\b(${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\b`,
             "gi"
           );
           highlightedValue = highlightedValue.replace(
