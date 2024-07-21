@@ -713,13 +713,48 @@ window.helper = {
     // Sort entities by text length in descending order to handle substrings in replacement
     entities.sort((a, b) => b.text.length - a.text.length);
 
+    const markNonSelectedRegions = (value, entity) => {
+      const longerEntities = this.currentEntities.filter(
+        (e) => e.text.length > entity.text.length
+      );
+      longerEntities.forEach((e) => {
+        const regex = new RegExp(
+          `(${this.replacementEscapeRegExp(e.text)})`,
+          "gi"
+        );
+        value = value.replace(regex, "[[MARKED:$1]]");
+      });
+      return value;
+    };
+
+    const unmarkRegions = (value) => {
+      const markedRegex = /\[\[MARKED:(.*?)\]\]/gi;
+      return value.replace(markedRegex, "$1");
+    };
+
     const performReplacement = (element, value) => {
       entities.forEach((entity) => {
+        value = markNonSelectedRegions(value, entity);
         const regex = new RegExp(
           `\\b${this.replacementEscapeRegExp(entity.text)}\\b`,
           "gi"
         );
-        value = value.replace(regex, `[${entity.entity_type}]`);
+
+        // Split the value by MARKED regions
+        let parts = value.split(/\[\[MARKED:.*?\]\]/g);
+        let markers = value.match(/\[\[MARKED:.*?\]\]/g) || [];
+
+        // Replace in non-marked regions
+        parts = parts.map((part) =>
+          part.replace(regex, `[${entity.entity_type}]`)
+        );
+
+        // Reassemble the parts with markers
+        value = parts.reduce((acc, part, i) => {
+          return acc + part + (markers[i] || "");
+        }, "");
+
+        value = unmarkRegions(value);
       });
       element.value = value;
     };
@@ -740,7 +775,7 @@ window.helper = {
   },
 
   replacementEscapeRegExp: function (string) {
-    // Make sure things like replacing Female to Fe[Gender1] don't happen when Male is detected as Gender1, and user chooses to only replace male
+    // Escape special characters for use in a regex
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
