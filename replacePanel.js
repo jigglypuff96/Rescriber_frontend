@@ -127,22 +127,6 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
       await window.helper.highlightDetectedWords();
     });
 
-  // function checkTooltip() {
-  //   const tooltip = document.querySelector(".pii-highlight-tooltip");
-  //   const highlightButton = document.getElementById("highlight-btn");
-  //   if (tooltip && highlightButton) {
-  //     highlightButton.disabled = tooltip !== null;
-  //   }
-  // }
-
-  // // Initial check
-  // checkTooltip();
-
-  // // Observe changes to the tooltip's existence
-  // const observer = new MutationObserver(() => {
-  //   checkTooltip();
-  // });
-
   observer.observe(document.body, {
     childList: true,
     subtree: true,

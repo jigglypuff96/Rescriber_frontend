@@ -176,11 +176,25 @@ observer.observe(document.body, {
   subtree: true,
 });
 
-// // Load entity counts from storage
-// chrome.storage.local.get("entityCounts", (data) => {
-//   entityCounts = data.entityCounts || {};
-//   console.log("Loaded entity counts:", entityCounts);
-// });
+function observeStopButton() {
+  const stopButtonObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      const stopButton = document.querySelector(
+        'button[data-testid="stop-button"]'
+      );
+      if (stopButton) {
+        // Once user send out the message, then stop button would show up, and send button will be replaced
+        // then we remove tooltip and panel
+        removeTooltipAndPanel();
+      }
+    });
+  });
+
+  stopButtonObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
 
 // Apply replacements on page load
 async function initialize() {
@@ -194,6 +208,7 @@ async function initialize() {
   console.log("calling initialize button");
   initializeButton();
   await window.helper.loadModelState();
+  observeStopButton();
 }
 
 // Call the initialize function when the content script loads and the DOM is ready
