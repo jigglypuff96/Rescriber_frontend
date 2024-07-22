@@ -713,49 +713,22 @@ window.helper = {
     // Sort entities by text length in descending order to handle substrings in replacement
     entities.sort((a, b) => b.text.length - a.text.length);
 
-    const markNonSelectedRegions = (value, entity) => {
-      const longerEntities = this.currentEntities.filter(
-        (e) => e.text.length > entity.text.length
-      );
-      longerEntities.forEach((e) => {
-        const regex = new RegExp(
-          `(${this.replacementEscapeRegExp(e.text)})`,
-          "gi"
-        );
-        value = value.replace(regex, "[[MARKED:$1]]");
-      });
-      return value;
-    };
-
-    const unmarkRegions = (value) => {
-      const markedRegex = /\[\[MARKED:(.*?)\]\]/gi;
-      return value.replace(markedRegex, "$1");
-    };
-
     const performReplacement = (element, value) => {
+      // Mark non-selected regions first
+      value = this.markNonSelectedRegions(value, entities);
+
+      // Replace selected entities
       entities.forEach((entity) => {
-        value = markNonSelectedRegions(value, entity);
         const regex = new RegExp(
           `\\b${this.replacementEscapeRegExp(entity.text)}\\b`,
           "gi"
         );
-
-        // Split the value by MARKED regions
-        let parts = value.split(/\[\[MARKED:.*?\]\]/g);
-        let markers = value.match(/\[\[MARKED:.*?\]\]/g) || [];
-
-        // Replace in non-marked regions
-        parts = parts.map((part) =>
-          part.replace(regex, `[${entity.entity_type}]`)
-        );
-
-        // Reassemble the parts with markers
-        value = parts.reduce((acc, part, i) => {
-          return acc + part + (markers[i] || "");
-        }, "");
-
-        value = unmarkRegions(value);
+        value = value.replace(regex, `[${entity.entity_type}]`);
       });
+
+      // Unmark regions after replacement
+      value = this.unmarkRegions(value);
+
       element.value = value;
     };
 
@@ -774,8 +747,61 @@ window.helper = {
     existingTooltips.forEach((existingTooltip) => existingTooltip.remove());
   },
 
+  markNonSelectedRegions: function (value, selectedEntities) {
+    const parts = [];
+    let lastIndex = 0;
+    const alreadyMarked = [];
+
+    this.currentEntities.forEach((currentEntity) => {
+      if (
+        !selectedEntities.some(
+          (entity) => entity.text === currentEntity.text
+        ) &&
+        selectedEntities.every(
+          (entity) => currentEntity.text.length > entity.text.length
+        )
+      ) {
+        const regex = new RegExp(
+          `(${currentEntity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+          "gi"
+        );
+        let match;
+        while ((match = regex.exec(value)) !== null) {
+          const matchIndex = match.index;
+          const matchEnd = regex.lastIndex;
+
+          // Skip if match is within already marked region: example if Dubai, United Arab Emirates and United Arab Emirates are both marked as PII
+          if (
+            alreadyMarked.some(
+              ([start, end]) => matchIndex >= start && matchEnd <= end
+            )
+          ) {
+            continue;
+          }
+
+          // Append the text between the last match and this match
+          parts.push(value.substring(lastIndex, matchIndex));
+          // Append the marked text
+          parts.push(`[[MARKED:${match[0]}]]`);
+          // Update the last index to the end of this match
+          lastIndex = matchEnd;
+          // Track this marked region
+          alreadyMarked.push([matchIndex, matchEnd]);
+        }
+      }
+    });
+
+    // Append any remaining text after the last match
+    parts.push(value.substring(lastIndex));
+
+    return parts.join("");
+  },
+
+  unmarkRegions: function (value) {
+    return value.replace(/\[\[MARKED:(.*?)\]\]/g, "$1");
+  },
+
   replacementEscapeRegExp: function (string) {
-    // Escape special characters for use in a regex
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
