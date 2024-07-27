@@ -198,9 +198,9 @@ function observeStopButton() {
 
 // Apply replacements on page load
 async function initialize() {
-  chrome.storage.local.set({ enabled: true });
-  window.helper.toggleEnabled(true);
-
+  if (!window.helper.enabled) {
+    return;
+  }
   // chrome.storage.local.set({ useOnDeviceModel: false });
   const { initializeButton } = await import(
     chrome.runtime.getURL("buttonWidget.js")

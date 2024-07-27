@@ -54,10 +54,6 @@ window.helper = {
     });
   },
 
-  setEnabledStatus: async function (newEnabledState) {
-    this.enabled = newEnabledState;
-  },
-
   getUserInputText: function () {
     const input = document.querySelector("textarea, input[type='text']");
     return input ? input.value : "";
