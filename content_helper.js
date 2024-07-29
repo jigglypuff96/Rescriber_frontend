@@ -675,14 +675,15 @@ window.helper = {
             continue;
           }
 
-          // Append the text between the last match and this match
-          parts.push(value.substring(lastIndex, matchIndex));
-          // Append the marked text
-          parts.push(`[[MARKED:${match[0]}]]`);
-          // Update the last index to the end of this match
-          lastIndex = matchEnd;
-          // Track this marked region
-          alreadyMarked.push([matchIndex, matchEnd]);
+          if (matchIndex >= lastIndex) {
+            // Append the text between the last match and this match
+            parts.push(value.substring(lastIndex, matchIndex));
+            parts.push(`[[MARKED:${match[0]}]]`);
+            // Update the last index to the end of this match
+            lastIndex = matchEnd;
+            // Track this marked region
+            alreadyMarked.push([matchIndex, matchEnd]);
+          }
         }
       }
     });
