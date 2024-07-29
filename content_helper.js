@@ -151,18 +151,6 @@ window.helper = {
     return { exists: false, key: null }; // Returns false and null if the value is not found
   },
 
-  getFromStorage: function (key) {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.get(key, (result) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(result);
-        }
-      });
-    });
-  },
-
   setToStorage: function (data) {
     return new Promise((resolve, reject) => {
       chrome.storage.local.set(data, () => {
@@ -275,103 +263,6 @@ window.helper = {
     );
     return entities;
   },
-
-  // processEntities: function (entities, finalClusters) {
-  //   const activeConversationId = this.getActiveConversationId() || "no-url";
-  //   if (!entityCounts[activeConversationId]) {
-  //     entityCounts[activeConversationId] = {};
-  //   }
-
-  //   const localEntityCounts = { ...entityCounts[activeConversationId] };
-
-  //   finalClusters.forEach((cluster) => {
-  //     for (let i = 0; i < entities.length; i++) {
-  //       const entity = entities[i];
-  //       // Check if the cluster includes the entity's text
-
-  //       if (cluster.includes(entity.text)) {
-  //         let placeholder;
-  //         chrome.storage.local.get(
-  //           `piiMappings_${activeConversationId}`,
-  //           (data) => {
-  //             const entity2PiiMapping =
-  //               data[`piiMappings_${activeConversationId}`];
-  //             if (this.findKeyByValue(entity2PiiMapping, entity.text).exists) {
-  //               placeholder = this.findKeyByValue(
-  //                 entity2PiiMapping,
-  //                 entity.text
-  //               ).key;
-  //             } else {
-  //               const entityType = entity.entity_type.replace(/[0-9]/g, "");
-  //               if (entityType) {
-  //                 if (!localEntityCounts[entityType]) {
-  //                   localEntityCounts[entityType] = 1;
-  //                 } else {
-  //                   localEntityCounts[entityType]++;
-  //                 }
-
-  //                 placeholder = `${entityType}${localEntityCounts[entityType]}`;
-  //               }
-  //             }
-
-  //             if (!this.pii2PlaceholderMappings[activeConversationId]) {
-  //               this.pii2PlaceholderMappings[activeConversationId] = {};
-  //             }
-  //             if (!this.tempMappings[activeConversationId]) {
-  //               this.tempMappings[activeConversationId] = {};
-  //             }
-  //             cluster.forEach((item) => {
-  //               if (!this.pii2PlaceholderMappings[activeConversationId][item]) {
-  //                 this.pii2PlaceholderMappings[activeConversationId][item] =
-  //                   placeholder;
-  //               }
-
-  //               if (!this.tempMappings[activeConversationId][placeholder]) {
-  //                 this.tempMappings[activeConversationId][placeholder] = item;
-  //               }
-  //             });
-  //           }
-  //         );
-
-  //         break;
-  //       }
-  //     }
-  //   });
-
-  //   entities.forEach((entity) => {
-  //     if (
-  //       // If this.pii2PlaceholderMappings is not undefined
-  //       this.pii2PlaceholderMappings &&
-  //       this.pii2PlaceholderMappings[activeConversationId]
-  //     ) {
-  //       entity.entity_type =
-  //         this.pii2PlaceholderMappings[activeConversationId][entity.text];
-  //     }
-  //   });
-
-  //   entityCounts[activeConversationId] = localEntityCounts;
-  //   this.tempPlaceholder2PiiMappings[activeConversationId] = {
-  //     ...this.tempPlaceholder2PiiMappings[activeConversationId],
-  //     ...this.tempMappings[activeConversationId],
-  //   };
-
-  //   // Save tempPlaceholder2PiiMappings to chrome storage
-  //   chrome.storage.local.set(
-  //     { tempPlaceholder2PiiMappings: this.tempPlaceholder2PiiMappings },
-  //     () => {
-  //       console.log(
-  //         "Temporary PII mappings updated:",
-  //         this.tempPlaceholder2PiiMappings
-  //       );
-  //     }
-  //   );
-
-  //   chrome.storage.local.set({
-  //     pii2PlaceholderMappings: this.pii2PlaceholderMappings,
-  //   });
-
-  //   return entities;
-  // },
 
   getResponseDetect: async function (userMessage) {
     let entities;
@@ -801,12 +692,6 @@ window.helper = {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
-  getActiveConversationId: function () {
-    const url = window.location.href;
-    const conversationIdMatch = url.match(/\/c\/([a-z0-9-]+)/);
-    return conversationIdMatch ? conversationIdMatch[1] : "no-url";
-  },
-
   getEntitiesByConversationId: function () {
     const activeConversationId = this.getActiveConversationId();
     const storageKey =
@@ -823,143 +708,6 @@ window.helper = {
             }
           : data.tempPlaceholder2PiiMappings["no-url"] || {};
       //TODO: convert piiMappings to entities, and update panel based on the current conversationID
-    });
-  },
-
-  replaceTextInElement: function (element) {
-    const activeConversationId = this.getActiveConversationId();
-    const storageKey =
-      activeConversationId !== "no-url"
-        ? `piiMappings_${activeConversationId}`
-        : null;
-
-    if (!chrome || !chrome.storage || !chrome.storage.local) {
-      console.error("Extension context invalidated.");
-      return;
-    }
-
-    chrome.storage.local.get(null, (data) => {
-      const piiMappings =
-        activeConversationId !== "no-url"
-          ? {
-              ...data[storageKey],
-              ...data.tempPlaceholder2PiiMappings[`${activeConversationId}`],
-              ...data.tempPlaceholder2PiiMappings["no-url"],
-            }
-          : data.tempPlaceholder2PiiMappings["no-url"] || {};
-
-      // Sort piiMappings by length of values in descending order
-      const sortedPiiMappings = Object.entries(piiMappings).sort(
-        (a, b) => b[1].length - a[1].length
-      );
-
-      // Get the background color based on the theme
-      const bgColor = document.childNodes[1].classList.contains("dark")
-        ? "#23a066"
-        : "#ade7cc";
-
-      const placeholderBgColor = document.childNodes[1].classList.contains(
-        "dark"
-      )
-        ? "rgb(213 44 126)"
-        : "rgb(231 185 207)";
-
-      function escapeRegExp(string) {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      }
-
-      // Recursive function to replace text in all child nodes
-      function replaceTextRecursively(node) {
-        node.childNodes.forEach((child) => {
-          if (child.nodeType === Node.TEXT_NODE) {
-            let originalText = child.textContent;
-            for (let [placeholder, pii] of sortedPiiMappings) {
-              const regexCurly = new RegExp(
-                `\\[${escapeRegExp(placeholder)}\\]`,
-                "g"
-              );
-              const regexPlain = new RegExp(
-                `\\b${escapeRegExp(placeholder)}\\b`,
-                "g"
-              );
-
-              originalText = originalText.replace(regexCurly, pii);
-              originalText = originalText.replace(regexPlain, pii);
-            }
-
-            if (child.textContent !== originalText) {
-              const fragment = document.createDocumentFragment();
-              let lastIndex = 0;
-
-              // Re-scan the originalText for replaced parts to wrap in spans
-              const combinedRegex = new RegExp(
-                sortedPiiMappings.map(([, pii]) => escapeRegExp(pii)).join("|"),
-                "g"
-              );
-
-              originalText.replace(combinedRegex, (match, offset) => {
-                // Add the text before the match
-                if (offset > lastIndex) {
-                  fragment.appendChild(
-                    document.createTextNode(
-                      originalText.slice(lastIndex, offset)
-                    )
-                  );
-                }
-
-                const span = document.createElement("span");
-                span.className = "highlight-pii-in-displayed-message";
-                span.style.backgroundColor = bgColor;
-                span.textContent = match;
-
-                const placeholder = sortedPiiMappings.find(
-                  ([, value]) => value === match
-                )[0];
-                span.setAttribute("data-placeholder", placeholder);
-
-                fragment.appendChild(span);
-                lastIndex = offset + match.length;
-              });
-
-              // Add any remaining text after the last match
-              if (lastIndex < originalText.length) {
-                fragment.appendChild(
-                  document.createTextNode(originalText.slice(lastIndex))
-                );
-              }
-              child.replaceWith(fragment);
-            }
-          } else if (child.nodeType === Node.ELEMENT_NODE) {
-            replaceTextRecursively(child);
-          }
-        });
-      }
-
-      if (element.matches('[data-message-author-role="assistant"]')) {
-        element
-          .querySelectorAll("p, li, div, span, strong, em, u, b, i")
-          .forEach((el) => {
-            replaceTextRecursively(el);
-          });
-      } else if (element.matches('[data-message-author-role="user"]')) {
-        replaceTextRecursively(element);
-      }
-
-      // After replacing text, add event listeners for the placeholders
-      const spans = element.querySelectorAll(
-        "span.highlight-pii-in-displayed-message"
-      );
-      spans.forEach((span) => {
-        const placeholder = span.getAttribute("data-placeholder");
-        span.addEventListener("mouseenter", () => {
-          span.textContent = placeholder;
-          span.style.backgroundColor = placeholderBgColor;
-        });
-        span.addEventListener("mouseleave", () => {
-          span.textContent = piiMappings[placeholder];
-          span.style.backgroundColor = bgColor;
-        });
-      });
     });
   },
 
@@ -1025,90 +773,226 @@ window.helper = {
     }
   },
 
-  checkMessageRenderedAndReplace: function (element) {
-    if (element.matches('[data-message-author-role="user"]')) {
-      this.currentUserMessage = element;
+  setInStorage: function (items) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.set(items, () => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
+    });
+  },
+
+  updateCurrentConversationPIIToCloud: async function () {
+    const activeConversationId = this.getActiveConversationId();
+    if (activeConversationId !== "no-url") {
+      try {
+        // Move temporary mappings to actual mappings once the conversation ID is available
+        const data = await this.getFromStorage(
+          `piiMappings_${activeConversationId}`
+        );
+        piiMappings[activeConversationId] = {
+          ...data[`piiMappings_${activeConversationId}`],
+          ...this.tempPlaceholder2PiiMappings[`${activeConversationId}`],
+          ...this.tempPlaceholder2PiiMappings["no-url"],
+        };
+
+        await this.setInStorage({
+          [`piiMappings_${activeConversationId}`]:
+            piiMappings[activeConversationId],
+        });
+        console.log(
+          "PII mappings saved for conversation:",
+          activeConversationId
+        );
+
+        // Clear temporary mappings
+        delete this.tempPlaceholder2PiiMappings["no-url"];
+        delete this.tempPlaceholder2PiiMappings[`${activeConversationId}`];
+        delete this.pii2PlaceholderMappings["no-url"];
+        delete this.pii2PlaceholderMappings[`${activeConversationId}`];
+        delete this.tempMappings["no-url"];
+        delete this.tempMappings[`${activeConversationId}`];
+
+        await this.setInStorage({
+          tempPlaceholder2PiiMappings: this.tempPlaceholder2PiiMappings,
+        });
+        console.log(
+          "Temporary PII mappings updated:",
+          this.tempPlaceholder2PiiMappings
+        );
+
+        // Save entityCounts to chrome storage
+        const countsData = await this.getFromStorage("entityCounts");
+        const counts = countsData.entityCounts || {};
+        counts[activeConversationId] = {
+          ...counts[activeConversationId],
+          ...entityCounts[activeConversationId],
+          ...entityCounts["no-url"],
+        };
+        delete entityCounts["no-url"];
+        entityCounts[activeConversationId] = counts[activeConversationId];
+
+        await this.setInStorage({ entityCounts: counts });
+        console.log("Entity counts updated:", counts);
+      } catch (error) {
+        console.error("Error updating conversation PII to cloud:", error);
+      }
     }
+  },
+
+  getActiveConversationId: function () {
+    const url = window.location.href;
+    const conversationIdMatch = url.match(/\/c\/([a-z0-9-]+)/);
+    return conversationIdMatch ? conversationIdMatch[1] : "no-url";
+  },
+
+  getFromStorage: function (keys) {
+    return new Promise((resolve, reject) => {
+      chrome.storage.local.get(keys, (result) => {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve(result);
+        }
+      });
+    });
+  },
+
+  checkMessageRenderedAndReplace: async function (element) {
     if (!this.enabled) {
       return;
     }
-    const interval = setInterval(() => {
-      const starButton = element?.parentElement?.parentElement
-        ?.querySelector('button[aria-haspopup="menu"]')
-        ?.querySelector("div .icon-md");
 
-      if (starButton) {
-        console.log("Message rendering complete, performing text replacement");
-        this.replaceTextInElement(element);
-        this.replaceTextInElement(this.currentUserMessage);
+    const activeConversationId = this.getActiveConversationId();
+    if (activeConversationId === "no-url") {
+      console.log("No active conversation URL detected.");
+      return;
+    }
 
-        const activeConversationId = this.getActiveConversationId();
-        if (activeConversationId !== "no-url") {
-          // Move temporary mappings to actual mappings once the conversation ID is available
-          chrome.storage.local.get(
-            `piiMappings_${activeConversationId}`,
-            (data) => {
-              piiMappings[activeConversationId] = {
-                ...data[`piiMappings_${activeConversationId}`],
-                ...this.tempPlaceholder2PiiMappings[`${activeConversationId}`],
-                ...this.tempPlaceholder2PiiMappings["no-url"],
-              };
-              chrome.storage.local.set(
-                {
-                  [`piiMappings_${activeConversationId}`]:
-                    piiMappings[activeConversationId],
-                },
-                () => {
-                  console.log(
-                    "PII mappings saved for conversation:",
-                    activeConversationId
-                  );
-                  // Clear temporary mappings
-                  delete this.tempPlaceholder2PiiMappings["no-url"];
-                  delete this.tempPlaceholder2PiiMappings[
-                    `${activeConversationId}`
-                  ];
-                  delete this.pii2PlaceholderMappings["no-url"];
-                  delete this.pii2PlaceholderMappings[
-                    `${activeConversationId}`
-                  ];
-                  delete this.tempMappings["no-url"];
-                  delete this.tempMappings[`${activeConversationId}`];
-                  chrome.storage.local.set(
-                    {
-                      tempPlaceholder2PiiMappings:
-                        this.tempPlaceholder2PiiMappings,
-                    },
-                    () => {
-                      console.log(
-                        "Temporary PII mappings updated:",
-                        this.tempPlaceholder2PiiMappings
-                      );
-                    }
-                  );
-                }
+    try {
+      // Fetch PII mappings from cloud storage
+      const data = await this.getFromStorage(
+        `piiMappings_${activeConversationId}`
+      );
+      const piiMappings = data[`piiMappings_${activeConversationId}`] || {};
+
+      this.updateCurrentEntitiesByPIIMappings(piiMappings);
+      this.replaceTextInElement(element, piiMappings);
+    } catch (error) {
+      console.error("Error fetching PII mappings:", error);
+    }
+  },
+
+  updateCurrentEntitiesByPIIMappings(piiMappings) {
+    this.currentEntities = Object.keys(piiMappings).map((key) => ({
+      entity_type: key,
+      text: piiMappings[key],
+    }));
+  },
+
+  replaceTextInElement: function (element, piiMappings) {
+    const sortedPiiMappings = Object.entries(piiMappings).sort(
+      (a, b) => b[1].length - a[1].length
+    );
+
+    const bgColor = document.childNodes[1].classList.contains("dark")
+      ? "#23a066"
+      : "#ade7cc";
+    const placeholderBgColor = document.childNodes[1].classList.contains("dark")
+      ? "rgb(213 44 126)"
+      : "rgb(231 185 207)";
+
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function replaceTextRecursively(node) {
+      node.childNodes.forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          let originalText = child.textContent;
+          for (let [placeholder, pii] of sortedPiiMappings) {
+            const regexCurly = new RegExp(
+              `\\[${escapeRegExp(placeholder)}\\]`,
+              "g"
+            );
+            const regexPlain = new RegExp(
+              `\\b${escapeRegExp(placeholder)}\\b`,
+              "g"
+            );
+
+            originalText = originalText.replace(regexCurly, pii);
+            originalText = originalText.replace(regexPlain, pii);
+          }
+
+          if (child.textContent !== originalText) {
+            const fragment = document.createDocumentFragment();
+            let lastIndex = 0;
+
+            const combinedRegex = new RegExp(
+              sortedPiiMappings.map(([, pii]) => escapeRegExp(pii)).join("|"),
+              "g"
+            );
+
+            originalText.replace(combinedRegex, (match, offset) => {
+              if (offset > lastIndex) {
+                fragment.appendChild(
+                  document.createTextNode(originalText.slice(lastIndex, offset))
+                );
+              }
+
+              const span = document.createElement("span");
+              span.className = "highlight-pii-in-displayed-message";
+              span.style.backgroundColor = bgColor;
+              span.textContent = match;
+
+              const placeholder = sortedPiiMappings.find(
+                ([, value]) => value === match
+              )[0];
+              span.setAttribute("data-placeholder", placeholder);
+
+              fragment.appendChild(span);
+              lastIndex = offset + match.length;
+            });
+
+            if (lastIndex < originalText.length) {
+              fragment.appendChild(
+                document.createTextNode(originalText.slice(lastIndex))
               );
-
-              // Save entityCounts to chrome storage
-              chrome.storage.local.get("entityCounts", (data) => {
-                const counts = data.entityCounts || {};
-                counts[activeConversationId] = {
-                  ...counts[activeConversationId],
-                  ...entityCounts[activeConversationId],
-                  ...entityCounts["no-url"],
-                };
-                delete entityCounts["no-url"];
-                entityCounts[activeConversationId] =
-                  counts[activeConversationId];
-                chrome.storage.local.set({ entityCounts: counts }, () => {
-                  console.log("Entity counts updated:", counts);
-                });
-              });
             }
-          );
+            child.replaceWith(fragment);
+          }
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          replaceTextRecursively(child);
         }
-        clearInterval(interval);
-      }
-    }, 100); // Check every 100ms
+      });
+    }
+
+    if (element.matches('[data-message-author-role="assistant"]')) {
+      element
+        .querySelectorAll("p, li, div, span, strong, em, u, b, i")
+        .forEach((el) => {
+          replaceTextRecursively(el);
+        });
+    } else if (element.matches('[data-message-author-role="user"]')) {
+      replaceTextRecursively(element);
+    }
+
+    const spans = element.querySelectorAll(
+      "span.highlight-pii-in-displayed-message"
+    );
+    spans.forEach((span) => {
+      const placeholder = span.getAttribute("data-placeholder");
+      span.addEventListener("mouseenter", () => {
+        span.textContent = placeholder;
+        span.style.backgroundColor = placeholderBgColor;
+      });
+      span.addEventListener("mouseleave", () => {
+        span.textContent = piiMappings[placeholder];
+        span.style.backgroundColor = bgColor;
+      });
+    });
   },
 };

@@ -17,13 +17,14 @@ function observeSendButton() {
   }
 
   sendButtonObserver = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
+    mutations.forEach(async (mutation) => {
       if (
         mutation.type === "attributes" &&
         mutation.attributeName === "disabled"
       ) {
         if (!sendButton.hasAttribute("disabled") && window.helper.enabled) {
           addDetectButton();
+          await window.helper.updateCurrentConversationPIIToCloud();
         } else {
           removeDetectButton();
         }

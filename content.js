@@ -8,6 +8,7 @@ let useOnDeviceModel = false;
 let currentConversationId = window.helper.getActiveConversationId();
 let typingTimer;
 const doneTypingInterval = 1000;
+let isCheckingConversationChange = false;
 
 console.log("Content script loaded!");
 
@@ -43,24 +44,61 @@ chrome.runtime.onMessage.addListener(async function (
 });
 
 async function checkForConversationChange() {
-  if (!window.helper.enabled) {
+  if (isCheckingConversationChange || !window.helper.enabled) {
     return;
   }
-  const newConversationId = window.helper.getActiveConversationId();
-  if (
-    newConversationId !== currentConversationId ||
-    previousEnabled !== window.helper.enabled
-  ) {
-    previousEnabled = window.helper.enabled;
-    currentConversationId = newConversationId;
-    removeTooltipAndPanel();
-    document.removeEventListener("input", typingHandler);
-    document.addEventListener("input", typingHandler);
-    const { addDetectButton } = await import(
-      chrome.runtime.getURL("buttonWidget.js")
-    );
-    addDetectButton();
+  isCheckingConversationChange = true;
+  try {
+    const newConversationId = window.helper.getActiveConversationId();
+    if (
+      previousEnabled !== window.helper.enabled &&
+      window.helper.enabled == true
+    ) {
+      previousEnabled = window.helper.enabled;
+      currentConversationId = newConversationId;
+      removeTooltipAndPanel();
+      document.removeEventListener("input", typingHandler);
+      document.addEventListener("input", typingHandler);
+      const { addDetectButton } = await import(
+        chrome.runtime.getURL("buttonWidget.js")
+      );
+      addDetectButton();
+    } else if (newConversationId !== currentConversationId) {
+      await handleConversationChange(newConversationId);
+    }
+  } finally {
+    isCheckingConversationChange = false;
   }
+}
+
+async function handleConversationChange(newConversationId) {
+  if (currentConversationId === "no-url" && newConversationId !== "no-url") {
+    const isNewUrl = await checkIfNewUrl(newConversationId);
+    if (isNewUrl) {
+      await window.helper.updateCurrentConversationPIIToCloud();
+    }
+  }
+  previousEnabled = window.helper.enabled;
+  currentConversationId = newConversationId;
+  removeTooltipAndPanel();
+  document.removeEventListener("input", typingHandler);
+  document.addEventListener("input", typingHandler);
+  const { addDetectButton } = await import(
+    chrome.runtime.getURL("buttonWidget.js")
+  );
+  addDetectButton();
+  checkAllMessagesForReplacement();
+}
+
+async function checkIfNewUrl(newConversationId) {
+  const storedUrls = await window.helper.getFromStorage("knownUrls");
+  const knownUrls = storedUrls.knownUrls || [];
+  if (!knownUrls.includes(newConversationId)) {
+    knownUrls.push(newConversationId);
+    await window.helper.setInStorage({ knownUrls });
+    return true;
+  }
+  return false;
 }
 
 function typingHandler(e) {
@@ -81,7 +119,7 @@ async function doneTyping() {
 
   let noFound;
   if (!detectedEntities) {
-    this.updateDetectButtonToIntial();
+    updateDetectButtonToIntial();
     return;
   }
   if (detectedEntities.length > 0) {
@@ -98,8 +136,12 @@ function showLoadingIndicator() {
     detectButton.innerHTML = `<span class="loader"></span>`;
   }
 }
+
 function updateDetectButtonToIntial() {
-  detectButton.innerHTML = `<span class="detect-circle"></span>`;
+  const detectButton = document.getElementById("detect-next-to-input-button");
+  if (detectButton) {
+    detectButton.innerHTML = `<span class="detect-circle"></span>`;
+  }
 }
 
 function updateDetectButtonWithResults(noFound) {
@@ -122,14 +164,6 @@ function updateDetectButtonWithResults(noFound) {
   }
 }
 
-setInterval(async () => {
-  try {
-    await checkForConversationChange();
-  } catch (error) {
-    console.error(error);
-  }
-}, 1000);
-
 function removeTooltipAndPanel() {
   const tooltip = document.querySelector(".pii-highlight-tooltip");
   if (tooltip) {
@@ -141,6 +175,14 @@ function removeTooltipAndPanel() {
     panel.remove();
   }
 }
+
+setInterval(async () => {
+  try {
+    await checkForConversationChange();
+  } catch (error) {
+    console.error(error);
+  }
+});
 
 // Improved mutation observer to handle new messages dynamically
 const observer = new MutationObserver((mutations) => {
@@ -201,7 +243,6 @@ async function initialize() {
   if (!window.helper.enabled) {
     return;
   }
-  // chrome.storage.local.set({ useOnDeviceModel: false });
   const { initializeButton } = await import(
     chrome.runtime.getURL("buttonWidget.js")
   );
@@ -211,12 +252,7 @@ async function initialize() {
   observeStopButton();
 }
 
-// Call the initialize function when the content script loads and the DOM is ready
-window.addEventListener("load", async () => {
-  await window.helper.getEnabledStatus();
-  enabled = window.helper.enabled;
-  initialize();
-
+async function checkAllMessagesForReplacement() {
   document
     .querySelectorAll('[data-message-author-role="assistant"]')
     .forEach((el) => {
@@ -227,4 +263,12 @@ window.addEventListener("load", async () => {
     .forEach((el) => {
       window.helper.checkMessageRenderedAndReplace(el);
     });
+}
+
+// Call the initialize function when the content script loads and the DOM is ready
+window.addEventListener("load", async () => {
+  await window.helper.getEnabledStatus();
+  enabled = window.helper.enabled;
+  initialize();
+  checkAllMessagesForReplacement();
 });
