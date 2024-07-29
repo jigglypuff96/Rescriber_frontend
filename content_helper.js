@@ -492,7 +492,6 @@ window.helper = {
     const inputs = document.querySelectorAll("textarea, input[type='text']");
     inputs.forEach((input) => {
       if (true) {
-        //input.value === userMessage
         let highlightedValue = input.value;
 
         // Create a copy of the entities array and sort the copy by the length of their text property in descending order
@@ -502,7 +501,7 @@ window.helper = {
 
         sortedEntities.forEach((entity) => {
           const regex = new RegExp(
-            `\\b(${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\b`,
+            `(${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
             "gi"
           );
           highlightedValue = highlightedValue.replace(
@@ -511,7 +510,17 @@ window.helper = {
           );
         });
 
-        this.displayHighlight(input, highlightedValue);
+        // Ensure the highlightedValue retains proper HTML structure
+        const escapedHighlightedValue = highlightedValue
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(
+            /&lt;span class="highlight"&gt;/g,
+            '<span class="highlight">'
+          )
+          .replace(/&lt;\/span&gt;/g, "</span>");
+
+        this.displayHighlight(input, escapedHighlightedValue);
       }
     });
   },
