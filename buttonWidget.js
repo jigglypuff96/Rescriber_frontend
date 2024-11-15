@@ -1,11 +1,14 @@
 let sendButtonObserver;
+let sendButton;
 
 export function initializeButton() {
   observeSendButton();
 }
 
 function observeSendButton() {
-  const sendButton = document.querySelector(".mb-1.me-1.flex");
+  if (!sendButton) {
+    sendButton = document.querySelector("[data-testid='send-button']");
+  }
 
   if (!sendButton) {
     console.error("Send button not found");
@@ -43,7 +46,7 @@ function observeSendButton() {
 }
 
 export function addDetectButton() {
-  const sendButton = document.querySelector(".mb-1.me-1.flex");
+  sendButton = document.querySelector("[data-testid='send-button']");
   if (sendButton && !document.getElementById("detect-next-to-input-button")) {
     const detectButton = document.createElement("button");
     detectButton.id = "detect-next-to-input-button";

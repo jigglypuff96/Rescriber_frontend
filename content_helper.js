@@ -1,16 +1,40 @@
 window.helper = {
   enabled: undefined,
   detectedEntities: [],
-  tempPlaceholder2PiiMappings: {},
-  pii2PlaceholderMappings: {},
-  piiMappings: {},
-  entityCounts: {},
   currentEntities: [],
   currentUserMessage: "",
-  tempMappings: {},
   previousUserMessage: "",
   previousEntities: [],
   useOnDeviceModel: false,
+
+  placeholderToPii: {},
+  piiToPlaceholder: {},
+  entityCounts: {},
+  tempMappings: {
+    tempPlaceholderToPii: {},
+    tempPiiToPlaceholder: {},
+  },
+  tempEntityCounts: {},
+
+  async initializeMappings() {
+    try {
+      const data = await this.getFromStorage(null);
+
+      // 从存储加载数据，初始化映射和计数
+      this.piiToPlaceholder = data.piiToPlaceholder || {};
+      this.placeholderToPii = data.placeholderToPii || {};
+      this.entityCounts = data.entityCounts || {};
+      this.tempMappings = {
+        tempPiiToPlaceholder: {},
+        tempPlaceholderToPii: {},
+      };
+      this.tempEntityCounts = {};
+
+      console.log("Mappings and counts loaded from storage.");
+    } catch (error) {
+      console.error("Error initializing mappings from storage:", error);
+    }
+  },
 
   toggleModel: async function () {
     this.useOnDeviceModel = !this.useOnDeviceModel;
@@ -54,9 +78,13 @@ window.helper = {
     });
   },
 
+  getUserInputElement: function () {
+    return document.querySelector("[contenteditable]");
+  },
+
   getUserInputText: function () {
-    const input = document.querySelector("textarea, input[type='text']");
-    return input ? input.value : "";
+    const input = this.getUserInputElement();
+    return input ? input.innerText : "";
   },
 
   generateUserMessageCluster: function (userMessage, entities) {
@@ -163,105 +191,250 @@ window.helper = {
     });
   },
 
-  processEntities: async function (entities, finalClusters) {
-    const activeConversationId = this.getActiveConversationId() || "no-url";
-    if (!entityCounts[activeConversationId]) {
-      entityCounts[activeConversationId] = {};
-    }
+  // async processEntities(entities, finalClusters) {
+  //   const activeConversationId = this.getActiveConversationId() || "no-url";
 
-    const localEntityCounts = { ...entityCounts[activeConversationId] };
+  //   const data = await this.getFromStorage(null);
+  //   this.piiToPlaceholder = data.piiToPlaceholder || {};
+  //   this.placeholderToPii = data.placeholderToPii || {};
+  //   this.entityCounts = data.entityCounts || {};
+
+  //   if (!this.entityCounts[activeConversationId]) {
+  //     this.entityCounts[activeConversationId] = {};
+  //   }
+  //   const localEntityCounts = this.entityCounts[activeConversationId];
+
+  //   if (activeConversationId === "no-url") {
+  //     if (!this.tempMappings.tempPlaceholderToPii) {
+  //       this.tempMappings.tempPlaceholderToPii = {};
+  //       this.tempMappings.tempPiiToPlaceholder = {};
+  //     }
+  //     if (!this.tempEntityCounts) {
+  //       this.tempEntityCounts = {};
+  //     }
+  //   }
+
+  //   for (const cluster of finalClusters) {
+  //     for (const entity of entities) {
+  //       if (cluster.includes(entity.text)) {
+  //         const entityType = entity.entity_type.replace(/[0-9]/g, "");
+  //         let placeholder;
+
+  //         const existingPlaceholder =
+  //           activeConversationId === "no-url"
+  //             ? this.tempMappings.tempPiiToPlaceholder[entity.text]
+  //             : this.piiToPlaceholder[activeConversationId]?.[entity.text];
+
+  //         if (existingPlaceholder) {
+  //           placeholder = existingPlaceholder;
+  //         } else {
+  //           localEntityCounts[entityType] =
+  //             (localEntityCounts[entityType] || 0) + 1;
+  //           placeholder = `${entityType}${localEntityCounts[entityType]}`;
+
+  //           if (activeConversationId === "no-url") {
+  //             this.tempMappings.tempPiiToPlaceholder[entity.text] = placeholder;
+  //             this.tempMappings.tempPlaceholderToPii[placeholder] = entity.text;
+  //             this.tempEntityCounts[entityType] =
+  //               (this.tempEntityCounts[entityType] || 0) + 1;
+  //           } else {
+  //             if (!this.piiToPlaceholder[activeConversationId]) {
+  //               this.piiToPlaceholder[activeConversationId] = {};
+  //               this.placeholderToPii[activeConversationId] = {};
+  //             }
+  //             this.piiToPlaceholder[activeConversationId][entity.text] =
+  //               placeholder;
+  //             this.placeholderToPii[activeConversationId][placeholder] =
+  //               entity.text;
+  //           }
+  //         }
+  //         entity.entity_placeholder = placeholder;
+
+  //         cluster.forEach((item) => {
+  //           if (activeConversationId === "no-url") {
+  //             this.tempMappings.tempPiiToPlaceholder[item] = placeholder;
+  //             this.tempMappings.tempPlaceholderToPii[placeholder] = item;
+  //           } else {
+  //             this.piiToPlaceholder[activeConversationId][item] = placeholder;
+  //             this.placeholderToPii[activeConversationId][placeholder] = item;
+  //           }
+  //         });
+
+  //         break;
+  //       }
+  //     }
+  //   }
+
+  //   this.entityCounts[activeConversationId] = localEntityCounts;
+  //   await this.saveMappingsToStorage();
+  //   return entities;
+  // },
+
+  async saveMappingsToStorage() {
+    try {
+      await this.setToStorage({
+        piiToPlaceholder: this.piiToPlaceholder,
+        placeholderToPii: this.placeholderToPii,
+        entityCounts: this.entityCounts,
+      });
+      console.log("Mappings and counts have been saved to storage.");
+    } catch (error) {
+      console.error("Error saving mappings to storage:", error);
+    }
+  },
+
+  async processEntities(entities, finalClusters) {
+    const activeConversationId = this.getActiveConversationId() || "no-url";
+
+    // 从存储中获取最新数据，避免覆盖
+    const data = await this.getFromStorage(null);
+    this.piiToPlaceholder = data.piiToPlaceholder || {};
+    this.placeholderToPii = data.placeholderToPii || {};
+    this.entityCounts = data.entityCounts || {};
+
+    if (!this.entityCounts[activeConversationId]) {
+      this.entityCounts[activeConversationId] = {};
+    }
+    const localEntityCounts = this.entityCounts[activeConversationId];
 
     for (const cluster of finalClusters) {
       for (const entity of entities) {
         if (cluster.includes(entity.text)) {
-          const data = await this.getFromStorage(
-            `piiMappings_${activeConversationId}`
-          );
-          const entity2PiiMapping = data[`piiMappings_${activeConversationId}`];
-
+          const entityType = entity.entity_type.replace(/[0-9]/g, "");
           let placeholder;
-          if (
-            entity2PiiMapping &&
-            entity.text &&
-            this.findKeyByValue(entity2PiiMapping, entity.text).exists
-          ) {
-            placeholder = this.findKeyByValue(
-              entity2PiiMapping,
-              entity.text
-            ).key;
+
+          const existingPlaceholder =
+            activeConversationId === "no-url"
+              ? this.tempMappings.tempPiiToPlaceholder[entity.text]
+              : this.piiToPlaceholder[activeConversationId]?.[entity.text];
+
+          if (existingPlaceholder) {
+            placeholder = existingPlaceholder;
           } else {
-            if (
-              this.pii2PlaceholderMappings[activeConversationId] &&
-              this.pii2PlaceholderMappings[activeConversationId].hasOwnProperty(
-                entity.text
-              )
-            ) {
-              placeholder =
-                this.pii2PlaceholderMappings[activeConversationId][entity.text];
-            } else if (
-              this.tempMappings[activeConversationId] &&
-              this.tempMappings[activeConversationId].hasOwnProperty(
-                entity.text
-              )
-            ) {
-              placeholder =
-                this.tempMappings[activeConversationId][entity.text];
+            localEntityCounts[entityType] =
+              (localEntityCounts[entityType] || 0) + 1;
+            placeholder = `${entityType}${localEntityCounts[entityType]}`;
+
+            if (activeConversationId === "no-url") {
+              this.tempMappings.tempPiiToPlaceholder[entity.text] = placeholder;
+              this.tempMappings.tempPlaceholderToPii[placeholder] = entity.text;
+              this.tempEntityCounts[entityType] =
+                (this.tempEntityCounts[entityType] || 0) + 1;
             } else {
-              const entityType = entity.entity_type.replace(/[0-9]/g, "");
-              if (entityType) {
-                localEntityCounts[entityType] =
-                  (localEntityCounts[entityType] || 0) + 1;
-                placeholder = `${entityType}${localEntityCounts[entityType]}`;
+              if (!this.piiToPlaceholder[activeConversationId]) {
+                this.piiToPlaceholder[activeConversationId] = {};
+                this.placeholderToPii[activeConversationId] = {};
               }
+              this.piiToPlaceholder[activeConversationId][entity.text] =
+                placeholder;
+              this.placeholderToPii[activeConversationId][placeholder] =
+                entity.text;
             }
           }
+          entity.entity_placeholder = placeholder;
 
-          if (!this.pii2PlaceholderMappings[activeConversationId]) {
-            this.pii2PlaceholderMappings[activeConversationId] = {};
-          }
-          if (!this.tempMappings[activeConversationId]) {
-            this.tempMappings[activeConversationId] = {};
-          }
           cluster.forEach((item) => {
-            this.pii2PlaceholderMappings[activeConversationId][item] =
-              placeholder;
-            this.tempMappings[activeConversationId][placeholder] = item;
+            if (activeConversationId === "no-url") {
+              this.tempMappings.tempPiiToPlaceholder[item] = placeholder;
+              this.tempMappings.tempPlaceholderToPii[placeholder] = item;
+            } else {
+              this.piiToPlaceholder[activeConversationId][item] = placeholder;
+              this.placeholderToPii[activeConversationId][placeholder] = item;
+            }
           });
-          // Break since we want to stop at the first match within a cluster
-          break;
         }
       }
     }
 
-    for (const entity of entities) {
-      if (
-        this.pii2PlaceholderMappings &&
-        this.pii2PlaceholderMappings[activeConversationId]
-      ) {
-        entity.entity_type =
-          this.pii2PlaceholderMappings[activeConversationId][entity.text];
+    this.entityCounts[activeConversationId] = localEntityCounts;
+    await this.saveMappingsToStorage(activeConversationId);
+
+    return entities;
+  },
+
+  // async saveMappingsToStorage(activeConversationId) {
+  //   try {
+  //     await this.setToStorage({
+  //       [`piiToPlaceholder_${activeConversationId}`]:
+  //         this.piiToPlaceholder[activeConversationId] || {},
+  //       [`placeholderToPii_${activeConversationId}`]:
+  //         this.placeholderToPii[activeConversationId] || {},
+  //       [`entityCounts_${activeConversationId}`]:
+  //         this.entityCounts[activeConversationId] || {},
+  //     });
+  //     console.log(
+  //       `Mappings and counts saved for conversation: ${activeConversationId}`
+  //     );
+  //   } catch (error) {
+  //     console.error("Error saving mappings to storage:", error);
+  //   }
+  // },
+
+  // async updateCurrentConversationPIIToCloud() {
+  //   const activeConversationId = this.getActiveConversationId();
+  //   if (activeConversationId !== "no-url") {
+  //     try {
+  //       this.piiToPlaceholder[activeConversationId] = {
+  //         ...this.piiToPlaceholder[activeConversationId],
+  //         ...this.tempMappings.tempPiiToPlaceholder,
+  //       };
+  //       this.placeholderToPii[activeConversationId] = {
+  //         ...this.placeholderToPii[activeConversationId],
+  //         ...this.tempMappings.tempPlaceholderToPii,
+  //       };
+
+  //       this.entityCounts[activeConversationId] = {
+  //         ...this.entityCounts[activeConversationId],
+  //         ...this.tempEntityCounts,
+  //       };
+
+  //       await this.saveMappingsToStorage();
+
+  //       console.log(
+  //         "Mappings and counts saved for conversation:",
+  //         activeConversationId
+  //       );
+
+  //       this.tempMappings.tempPiiToPlaceholder = {};
+  //       this.tempMappings.tempPlaceholderToPii = {};
+  //       this.tempEntityCounts = {};
+  //     } catch (error) {
+  //       console.error("Error updating conversation PII to cloud:", error);
+  //     }
+  //   }
+  // },
+
+  async updateCurrentConversationPIIToCloud() {
+    const activeConversationId = this.getActiveConversationId();
+    if (activeConversationId !== "no-url") {
+      try {
+        this.piiToPlaceholder[activeConversationId] = {
+          ...this.piiToPlaceholder[activeConversationId],
+          ...this.tempMappings.tempPiiToPlaceholder,
+        };
+        this.placeholderToPii[activeConversationId] = {
+          ...this.placeholderToPii[activeConversationId],
+          ...this.tempMappings.tempPlaceholderToPii,
+        };
+        this.entityCounts[activeConversationId] = {
+          ...this.entityCounts[activeConversationId],
+          ...this.tempEntityCounts,
+        };
+
+        await this.saveMappingsToStorage(activeConversationId);
+
+        console.log(
+          "Mappings and counts saved for conversation:",
+          activeConversationId
+        );
+
+        this.tempMappings.tempPiiToPlaceholder = {};
+        this.tempMappings.tempPlaceholderToPii = {};
+        this.tempEntityCounts = {};
+      } catch (error) {
+        console.error("Error updating conversation PII to cloud:", error);
       }
     }
-
-    entityCounts[activeConversationId] = localEntityCounts;
-    this.tempPlaceholder2PiiMappings[activeConversationId] = {
-      ...this.tempPlaceholder2PiiMappings[activeConversationId],
-      ...this.tempMappings[activeConversationId],
-    };
-
-    // Save tempPlaceholder2PiiMappings and pii2PlaceholderMappings to chrome storage
-    await this.setToStorage({
-      tempPlaceholder2PiiMappings: this.tempPlaceholder2PiiMappings,
-    });
-    await this.setToStorage({
-      pii2PlaceholderMappings: this.pii2PlaceholderMappings,
-    });
-
-    console.log(
-      "Temporary PII mappings updated:",
-      this.tempPlaceholder2PiiMappings
-    );
-    return entities;
   },
 
   getResponseDetect: async function (userMessage) {
@@ -471,9 +644,9 @@ window.helper = {
   },
 
   revertToPreviousState: async function () {
-    const input = document.querySelector("textarea, input[type='text']");
+    const input = this.getUserInputElement();
     if (input) {
-      input.value = this.previousUserMessage;
+      input.innerText = this.previousUserMessage;
       this.currentUserMessage = this.previousUserMessage;
       this.currentEntities = [...this.previousEntities];
       await this.updatePIIReplacementPanel(this.currentEntities);
@@ -488,41 +661,37 @@ window.helper = {
       );
       addDetectButton();
     }
+    let highlightedValue = this.getUserInputText();
 
-    const inputs = document.querySelectorAll("textarea, input[type='text']");
-    inputs.forEach((input) => {
-      if (true) {
-        let highlightedValue = input.value;
+    // Create a copy of the entities array and sort the copy by the length of their text property in descending order
+    const sortedEntities = [...entities].sort(
+      (a, b) => b.text.length - a.text.length
+    );
 
-        // Create a copy of the entities array and sort the copy by the length of their text property in descending order
-        const sortedEntities = [...entities].sort(
-          (a, b) => b.text.length - a.text.length
-        );
-
-        sortedEntities.forEach((entity) => {
-          const regex = new RegExp(
-            `(${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
-            "gi"
-          );
-          highlightedValue = highlightedValue.replace(
-            regex,
-            '<span class="highlight">$1</span>'
-          );
-        });
-
-        // Ensure the highlightedValue retains proper HTML structure
-        const escapedHighlightedValue = highlightedValue
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(
-            /&lt;span class="highlight"&gt;/g,
-            '<span class="highlight">'
-          )
-          .replace(/&lt;\/span&gt;/g, "</span>");
-
-        this.displayHighlight(input, escapedHighlightedValue);
-      }
+    sortedEntities.forEach((entity) => {
+      const regex = new RegExp(
+        `(${entity.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`,
+        "gi"
+      );
+      highlightedValue = highlightedValue.replace(
+        regex,
+        '<span class="highlight">$1</span>'
+      );
     });
+
+    // Ensure the highlightedValue retains proper HTML structure
+    const escapedHighlightedValue = highlightedValue
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/&lt;span class="highlight"&gt;/g, '<span class="highlight">')
+      .replace(/&lt;\/span&gt;/g, "</span>");
+
+    if (escapedHighlightedValue.length > 0) {
+      this.displayHighlight(
+        this.getUserInputElement(),
+        escapedHighlightedValue
+      );
+    }
   },
 
   displayHighlight: function (target, highlightedValue) {
@@ -576,67 +745,84 @@ window.helper = {
   },
 
   replaceWords: function (entities) {
-    const textareas = document.querySelectorAll("textarea");
-    const inputs = document.querySelectorAll("input[type='text']");
-
+    const inputField = this.getUserInputElement();
     const activeConversationId = this.getActiveConversationId() || "no-url";
+
     console.log("Current active conversation ID:", activeConversationId);
 
     if (!this.entityCounts[activeConversationId]) {
       this.entityCounts[activeConversationId] = {};
     }
 
+    let localMappings;
+
+    // 根据 activeConversationId 判断使用临时映射还是持久化映射
+    if (activeConversationId === "no-url") {
+      localMappings = {
+        piiToPlaceholder: this.tempMappings.tempPiiToPlaceholder || {},
+        placeholderToPii: this.tempMappings.tempPlaceholderToPii || {},
+      };
+    } else {
+      localMappings = {
+        piiToPlaceholder: this.piiToPlaceholder[activeConversationId] || {},
+        placeholderToPii: this.placeholderToPii[activeConversationId] || {},
+      };
+    }
+
     entities.forEach((entity) => {
-      if (!this.tempPlaceholder2PiiMappings[activeConversationId]) {
-        this.tempPlaceholder2PiiMappings[activeConversationId] = {};
-      }
-      if (
-        !this.tempPlaceholder2PiiMappings[activeConversationId][
-          entity.entity_type
-        ]
-      ) {
-        this.tempPlaceholder2PiiMappings[activeConversationId][
-          entity.entity_type
-        ] = entity.text;
+      const entityType = entity.entity_type.replace(/[0-9]/g, "");
+      let placeholder;
+
+      // 检查是否已有映射
+      if (localMappings.piiToPlaceholder[entity.text]) {
+        placeholder = localMappings.piiToPlaceholder[entity.text];
+      } else {
+        // 更新计数
+        this.entityCounts[activeConversationId][entityType] =
+          (this.entityCounts[activeConversationId][entityType] || 0) + 1;
+        placeholder = `${entityType}${this.entityCounts[activeConversationId][entityType]}`;
+
+        // 更新映射
+        localMappings.piiToPlaceholder[entity.text] = placeholder;
+        localMappings.placeholderToPii[placeholder] = entity.text;
+
+        // 如果是 "no-url" 情况，需要更新临时映射
+        if (activeConversationId === "no-url") {
+          this.tempMappings.tempPiiToPlaceholder[entity.text] = placeholder;
+          this.tempMappings.tempPlaceholderToPii[placeholder] = entity.text;
+        } else {
+          // Update existing mappings
+          this.piiToPlaceholder[activeConversationId][entity.text] =
+            placeholder;
+          this.placeholderToPii[activeConversationId][placeholder] =
+            entity.text;
+        }
       }
     });
 
-    console.log(
-      "Temporary PII mappings updated:",
-      this.tempPlaceholder2PiiMappings
-    );
+    console.log("Updated mappings:", localMappings);
 
-    // Sort entities by text length in descending order to handle substrings in replacement
     entities.sort((a, b) => b.text.length - a.text.length);
 
     const performReplacement = (element, value) => {
-      // Mark non-selected regions first
       value = this.markNonSelectedRegions(value, entities);
 
-      // Replace selected entities
       entities.forEach((entity) => {
+        const placeholder =
+          localMappings.piiToPlaceholder[entity.text] || entity.entity_type;
         const regex = new RegExp(
           `\\b${this.replacementEscapeRegExp(entity.text)}\\b`,
           "gi"
         );
-        value = value.replace(regex, `[${entity.entity_type}]`);
+        value = value.replace(regex, `[${placeholder}]`);
       });
-
-      // Unmark regions after replacement
       value = this.unmarkRegions(value);
 
-      element.value = value;
+      element.innerText = value;
     };
 
-    textareas.forEach((textarea) => {
-      performReplacement(textarea, textarea.value);
-    });
+    performReplacement(inputField, inputField.innerText);
 
-    inputs.forEach((input) => {
-      performReplacement(input, input.value);
-    });
-
-    // Remove tooltips after replacement
     const existingTooltips = document.querySelectorAll(
       ".pii-highlight-tooltip"
     );
@@ -702,23 +888,45 @@ window.helper = {
     return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   },
 
-  getEntitiesByConversationId: function () {
+  getEntitiesByConversationId: async function () {
     const activeConversationId = this.getActiveConversationId();
-    const storageKey =
-      activeConversationId !== "no-url"
-        ? `piiMappings_${activeConversationId}`
-        : null;
-    chrome.storage.local.get(null, (data) => {
-      const piiMappings =
-        activeConversationId !== "no-url"
-          ? {
-              ...data[storageKey],
-              ...data.tempPlaceholder2PiiMappings[`${activeConversationId}`],
-              ...data.tempPlaceholder2PiiMappings["no-url"],
-            }
-          : data.tempPlaceholder2PiiMappings["no-url"] || {};
-      //TODO: convert piiMappings to entities, and update panel based on the current conversationID
-    });
+    const isNoUrl = activeConversationId === "no-url";
+
+    let placeholderToPii = {};
+    let piiToPlaceholder = {};
+
+    try {
+      // Get existing mapping from cloud storage
+      const data = await this.getFromStorage(null);
+
+      if (isNoUrl) {
+        // Use temp mapping if no-url
+        placeholderToPii = this.tempMappings.tempPlaceholderToPii || {};
+        piiToPlaceholder = this.tempMappings.tempPiiToPlaceholder || {};
+      } else {
+        // Combine and form permanent mapping
+        placeholderToPii = {
+          ...data.placeholderToPii?.[activeConversationId],
+          ...this.tempMappings.tempPlaceholderToPii,
+        };
+        piiToPlaceholder = {
+          ...data.piiToPlaceholder?.[activeConversationId],
+          ...this.tempMappings.tempPiiToPlaceholder,
+        };
+      }
+
+      // Convert PII mappings to entities
+      const entities = Object.keys(piiToPlaceholder).map((pii) => ({
+        entity_type: piiToPlaceholder[pii],
+        text: pii,
+      }));
+
+      console.log("Entities for current conversation:", entities);
+      return entities;
+    } catch (error) {
+      console.error("Error retrieving entities by conversation ID:", error);
+      return [];
+    }
   },
 
   handleAbstractResponse: async function (
@@ -733,12 +941,10 @@ window.helper = {
     );
 
     if (abstractResponse) {
-      const input = document.querySelector("textarea, input[type='text']");
+      const input = this.getUserInputElement();
       if (input) {
-        input.value = abstractResponse;
+        input.innerText = abstractResponse;
         this.currentUserMessage = abstractResponse;
-        // this.updateDetectedEntities();
-        // await this.updatePanelWithCurrentDetection();
       }
     }
   },
@@ -783,76 +989,6 @@ window.helper = {
     }
   },
 
-  setInStorage: function (items) {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.set(items, () => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve();
-        }
-      });
-    });
-  },
-
-  updateCurrentConversationPIIToCloud: async function () {
-    const activeConversationId = this.getActiveConversationId();
-    if (activeConversationId !== "no-url") {
-      try {
-        // Move temporary mappings to actual mappings once the conversation ID is available
-        const data = await this.getFromStorage(
-          `piiMappings_${activeConversationId}`
-        );
-        piiMappings[activeConversationId] = {
-          ...data[`piiMappings_${activeConversationId}`],
-          ...this.tempPlaceholder2PiiMappings[`${activeConversationId}`],
-          ...this.tempPlaceholder2PiiMappings["no-url"],
-        };
-
-        await this.setInStorage({
-          [`piiMappings_${activeConversationId}`]:
-            piiMappings[activeConversationId],
-        });
-        console.log(
-          "PII mappings saved for conversation:",
-          activeConversationId
-        );
-
-        // Clear temporary mappings
-        delete this.tempPlaceholder2PiiMappings["no-url"];
-        delete this.tempPlaceholder2PiiMappings[`${activeConversationId}`];
-        delete this.pii2PlaceholderMappings["no-url"];
-        delete this.pii2PlaceholderMappings[`${activeConversationId}`];
-        delete this.tempMappings["no-url"];
-        delete this.tempMappings[`${activeConversationId}`];
-
-        await this.setInStorage({
-          tempPlaceholder2PiiMappings: this.tempPlaceholder2PiiMappings,
-        });
-        console.log(
-          "Temporary PII mappings updated:",
-          this.tempPlaceholder2PiiMappings
-        );
-
-        // Save entityCounts to chrome storage
-        const countsData = await this.getFromStorage("entityCounts");
-        const counts = countsData.entityCounts || {};
-        counts[activeConversationId] = {
-          ...counts[activeConversationId],
-          ...entityCounts[activeConversationId],
-          ...entityCounts["no-url"],
-        };
-        delete entityCounts["no-url"];
-        entityCounts[activeConversationId] = counts[activeConversationId];
-
-        await this.setInStorage({ entityCounts: counts });
-        console.log("Entity counts updated:", counts);
-      } catch (error) {
-        console.error("Error updating conversation PII to cloud:", error);
-      }
-    }
-  },
-
   getActiveConversationId: function () {
     const url = window.location.href;
     const conversationIdMatch = url.match(/\/c\/([a-z0-9-]+)/);
@@ -883,14 +1019,16 @@ window.helper = {
     }
 
     try {
-      // Fetch PII mappings from cloud storage
-      const data = await this.getFromStorage(
-        `piiMappings_${activeConversationId}`
-      );
-      const piiMappings = data[`piiMappings_${activeConversationId}`] || {};
+      // Get mapping from cloud storage
+      const data = await this.getFromStorage(null);
+      const piiToPlaceholder =
+        data.piiToPlaceholder?.[activeConversationId] || {};
+      const placeholderToPii =
+        data.placeholderToPii?.[activeConversationId] || {};
 
-      this.updateCurrentEntitiesByPIIMappings(piiMappings);
-      this.replaceTextInElement(element, piiMappings);
+      // Update current entities by using the mappings from cloud
+      this.updateCurrentEntitiesByPIIMappings(piiToPlaceholder);
+      this.replaceTextInElement(element, placeholderToPii);
     } catch (error) {
       console.error("Error fetching PII mappings:", error);
     }
@@ -987,7 +1125,9 @@ window.helper = {
           replaceTextRecursively(el);
         });
     } else if (element.matches('[data-message-author-role="user"]')) {
-      replaceTextRecursively(element);
+      element.querySelectorAll("div").forEach((el) => {
+        replaceTextRecursively(el);
+      });
     }
 
     const spans = element.querySelectorAll(

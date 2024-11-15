@@ -19,7 +19,7 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
     .map(
       (entity) => `
       <li class="pii-item">
-        <span>${entity.text} - ${entity.entity_type}</span>
+        <span>${entity.text} - ${entity.entity_placeholder}</span>
         <input type="checkbox" class="pii-checkbox" data-entity-text="${entity.text}">
       </li>`
     )
@@ -179,8 +179,8 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
   }
 
   function checkMessageStateChanged() {
-    const input = document.querySelector("textarea, input[type='text']");
-    return input.value !== window.helper.previousUserMessage;
+    const input = window.helper.getUserInputElement();
+    return input.innerText !== window.helper.previousUserMessage;
   }
 
   function showAbstractLoading() {
@@ -201,7 +201,7 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
     });
   }
 
-  const inputField = document.querySelector("textarea, input[type='text']");
+  const inputField = window.helper.getUserInputElement();
   if (inputField) {
     inputField.addEventListener("input", updateRevertButtonState);
   }
