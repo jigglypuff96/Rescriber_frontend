@@ -189,39 +189,74 @@ const processingQueue = [];
 let isProcessing = false;
 
 function enqueueAndReplace(target) {
-  // 如果目标元素已经被处理，直接返回
+  // If the target element has already been processed, return early
   if (!target || target.hasAttribute("data-replaced")) return;
 
-  // 标记为已处理，避免重复添加
+  // Mark the target as processed to avoid duplicate additions
   target.setAttribute("data-replaced", "true");
 
-  // 添加到队列中
+  // Add the target to the queue
   processingQueue.push(target);
   processQueue();
 }
 
 async function processQueue() {
-  // 如果正在处理，直接返回，避免重复调用
+  // If processing is already ongoing, return to prevent duplicate calls
   if (isProcessing) return;
 
   isProcessing = true;
   while (processingQueue.length > 0) {
     const target = processingQueue.shift();
     await checkAndReplace(target);
-    // if (target && target.textContent.trim()) {
-    //   console.log("Processing and replacing content:", target);
-    //   await window.helper.checkMessageRenderedAndReplace(target);
-    // }
   }
   isProcessing = false;
+}
+
+// Check if the text content is empty, ignoring zero-width and whitespace characters
+function isContentEmpty(text) {
+  return text.replace(/[\s\u200B\u00A0\uFEFF]/g, "").trim() === "";
+}
+
+// Determine if the content is fully loaded
+function isContentFullyLoaded(target) {
+  // First, check the basic conditions
+  if (
+    target === undefined ||
+    target.textContent.trim() === "" ||
+    isContentEmpty(target.textContent)
+  ) {
+    return false;
+  }
+
+  // If it's an `assistant` message, check the child elements' `::after` content
+  const isAssistant =
+    target.getAttribute("data-message-author-role") === "assistant";
+  if (isAssistant && !areAfterElementsLoaded(target)) {
+    return false;
+  }
+
+  // If all conditions are met, return true
+  return true;
+}
+
+// Check if the `::after` pseudo-element content of child elements is fully loaded
+function areAfterElementsLoaded(target) {
+  const elements = target.querySelectorAll("*");
+  for (let element of elements) {
+    const afterContent = window.getComputedStyle(element, "::after").content;
+    if (afterContent && afterContent !== "none" && afterContent !== '""') {
+      console.log("Element with loading indicator found:", element);
+      return false;
+    }
+  }
+  return true;
 }
 
 async function checkAndReplace(target) {
   if (!target) return;
 
-  // 使用轮询等待内容加载
   const waitForContentLoad = () => {
-    if (target && target.textContent.trim() === "") {
+    if (!isContentFullyLoaded(target)) {
       console.log("Waiting for content to load...");
       requestAnimationFrame(waitForContentLoad);
     } else {
@@ -233,7 +268,6 @@ async function checkAndReplace(target) {
   waitForContentLoad();
 }
 
-// 改进后的 MutationObserver
 const observer = new MutationObserver((mutations) => {
   if (!window.helper.enabled) return;
 
@@ -251,7 +285,6 @@ const observer = new MutationObserver((mutations) => {
   });
 });
 
-// 观察函数
 function observeMessageElement(element) {
   observer.observe(element, {
     childList: true,
@@ -259,7 +292,6 @@ function observeMessageElement(element) {
   });
 }
 
-// 初始化观察
 document
   .querySelectorAll(
     '[data-message-author-role="assistant"], [data-message-author-role="user"]'

@@ -20,7 +20,7 @@ window.helper = {
     try {
       const data = await this.getFromStorage(null);
 
-      // 从存储加载数据，初始化映射和计数
+      // Load data from cloud storage，initialize mappings and counts
       this.piiToPlaceholder = data.piiToPlaceholder || {};
       this.placeholderToPii = data.placeholderToPii || {};
       this.entityCounts = data.entityCounts || {};
@@ -191,85 +191,6 @@ window.helper = {
     });
   },
 
-  // async processEntities(entities, finalClusters) {
-  //   const activeConversationId = this.getActiveConversationId() || "no-url";
-
-  //   const data = await this.getFromStorage(null);
-  //   this.piiToPlaceholder = data.piiToPlaceholder || {};
-  //   this.placeholderToPii = data.placeholderToPii || {};
-  //   this.entityCounts = data.entityCounts || {};
-
-  //   if (!this.entityCounts[activeConversationId]) {
-  //     this.entityCounts[activeConversationId] = {};
-  //   }
-  //   const localEntityCounts = this.entityCounts[activeConversationId];
-
-  //   if (activeConversationId === "no-url") {
-  //     if (!this.tempMappings.tempPlaceholderToPii) {
-  //       this.tempMappings.tempPlaceholderToPii = {};
-  //       this.tempMappings.tempPiiToPlaceholder = {};
-  //     }
-  //     if (!this.tempEntityCounts) {
-  //       this.tempEntityCounts = {};
-  //     }
-  //   }
-
-  //   for (const cluster of finalClusters) {
-  //     for (const entity of entities) {
-  //       if (cluster.includes(entity.text)) {
-  //         const entityType = entity.entity_type.replace(/[0-9]/g, "");
-  //         let placeholder;
-
-  //         const existingPlaceholder =
-  //           activeConversationId === "no-url"
-  //             ? this.tempMappings.tempPiiToPlaceholder[entity.text]
-  //             : this.piiToPlaceholder[activeConversationId]?.[entity.text];
-
-  //         if (existingPlaceholder) {
-  //           placeholder = existingPlaceholder;
-  //         } else {
-  //           localEntityCounts[entityType] =
-  //             (localEntityCounts[entityType] || 0) + 1;
-  //           placeholder = `${entityType}${localEntityCounts[entityType]}`;
-
-  //           if (activeConversationId === "no-url") {
-  //             this.tempMappings.tempPiiToPlaceholder[entity.text] = placeholder;
-  //             this.tempMappings.tempPlaceholderToPii[placeholder] = entity.text;
-  //             this.tempEntityCounts[entityType] =
-  //               (this.tempEntityCounts[entityType] || 0) + 1;
-  //           } else {
-  //             if (!this.piiToPlaceholder[activeConversationId]) {
-  //               this.piiToPlaceholder[activeConversationId] = {};
-  //               this.placeholderToPii[activeConversationId] = {};
-  //             }
-  //             this.piiToPlaceholder[activeConversationId][entity.text] =
-  //               placeholder;
-  //             this.placeholderToPii[activeConversationId][placeholder] =
-  //               entity.text;
-  //           }
-  //         }
-  //         entity.entity_placeholder = placeholder;
-
-  //         cluster.forEach((item) => {
-  //           if (activeConversationId === "no-url") {
-  //             this.tempMappings.tempPiiToPlaceholder[item] = placeholder;
-  //             this.tempMappings.tempPlaceholderToPii[placeholder] = item;
-  //           } else {
-  //             this.piiToPlaceholder[activeConversationId][item] = placeholder;
-  //             this.placeholderToPii[activeConversationId][placeholder] = item;
-  //           }
-  //         });
-
-  //         break;
-  //       }
-  //     }
-  //   }
-
-  //   this.entityCounts[activeConversationId] = localEntityCounts;
-  //   await this.saveMappingsToStorage();
-  //   return entities;
-  // },
-
   async saveMappingsToStorage() {
     try {
       await this.setToStorage({
@@ -286,7 +207,7 @@ window.helper = {
   async processEntities(entities, finalClusters) {
     const activeConversationId = this.getActiveConversationId() || "no-url";
 
-    // 从存储中获取最新数据，避免覆盖
+    // Get data from storage always
     const data = await this.getFromStorage(null);
     this.piiToPlaceholder = data.piiToPlaceholder || {};
     this.placeholderToPii = data.placeholderToPii || {};
@@ -352,58 +273,6 @@ window.helper = {
     return entities;
   },
 
-  // async saveMappingsToStorage(activeConversationId) {
-  //   try {
-  //     await this.setToStorage({
-  //       [`piiToPlaceholder_${activeConversationId}`]:
-  //         this.piiToPlaceholder[activeConversationId] || {},
-  //       [`placeholderToPii_${activeConversationId}`]:
-  //         this.placeholderToPii[activeConversationId] || {},
-  //       [`entityCounts_${activeConversationId}`]:
-  //         this.entityCounts[activeConversationId] || {},
-  //     });
-  //     console.log(
-  //       `Mappings and counts saved for conversation: ${activeConversationId}`
-  //     );
-  //   } catch (error) {
-  //     console.error("Error saving mappings to storage:", error);
-  //   }
-  // },
-
-  // async updateCurrentConversationPIIToCloud() {
-  //   const activeConversationId = this.getActiveConversationId();
-  //   if (activeConversationId !== "no-url") {
-  //     try {
-  //       this.piiToPlaceholder[activeConversationId] = {
-  //         ...this.piiToPlaceholder[activeConversationId],
-  //         ...this.tempMappings.tempPiiToPlaceholder,
-  //       };
-  //       this.placeholderToPii[activeConversationId] = {
-  //         ...this.placeholderToPii[activeConversationId],
-  //         ...this.tempMappings.tempPlaceholderToPii,
-  //       };
-
-  //       this.entityCounts[activeConversationId] = {
-  //         ...this.entityCounts[activeConversationId],
-  //         ...this.tempEntityCounts,
-  //       };
-
-  //       await this.saveMappingsToStorage();
-
-  //       console.log(
-  //         "Mappings and counts saved for conversation:",
-  //         activeConversationId
-  //       );
-
-  //       this.tempMappings.tempPiiToPlaceholder = {};
-  //       this.tempMappings.tempPlaceholderToPii = {};
-  //       this.tempEntityCounts = {};
-  //     } catch (error) {
-  //       console.error("Error updating conversation PII to cloud:", error);
-  //     }
-  //   }
-  // },
-
   async updateCurrentConversationPIIToCloud() {
     const activeConversationId = this.getActiveConversationId();
     if (activeConversationId !== "no-url") {
@@ -420,6 +289,7 @@ window.helper = {
           ...this.entityCounts[activeConversationId],
           ...this.tempEntityCounts,
         };
+        this.entityCounts["no-url"] = {};
 
         await this.saveMappingsToStorage(activeConversationId);
 
@@ -756,7 +626,7 @@ window.helper = {
 
     let localMappings;
 
-    // 根据 activeConversationId 判断使用临时映射还是持久化映射
+    // if no-url, then temp
     if (activeConversationId === "no-url") {
       localMappings = {
         piiToPlaceholder: this.tempMappings.tempPiiToPlaceholder || {},
@@ -773,20 +643,17 @@ window.helper = {
       const entityType = entity.entity_type.replace(/[0-9]/g, "");
       let placeholder;
 
-      // 检查是否已有映射
       if (localMappings.piiToPlaceholder[entity.text]) {
         placeholder = localMappings.piiToPlaceholder[entity.text];
       } else {
-        // 更新计数
         this.entityCounts[activeConversationId][entityType] =
           (this.entityCounts[activeConversationId][entityType] || 0) + 1;
         placeholder = `${entityType}${this.entityCounts[activeConversationId][entityType]}`;
 
-        // 更新映射
         localMappings.piiToPlaceholder[entity.text] = placeholder;
         localMappings.placeholderToPii[placeholder] = entity.text;
 
-        // 如果是 "no-url" 情况，需要更新临时映射
+        // if "no-url", then update mappings
         if (activeConversationId === "no-url") {
           this.tempMappings.tempPiiToPlaceholder[entity.text] = placeholder;
           this.tempMappings.tempPlaceholderToPii[placeholder] = entity.text;
@@ -1036,8 +903,9 @@ window.helper = {
 
   updateCurrentEntitiesByPIIMappings(piiMappings) {
     this.currentEntities = Object.keys(piiMappings).map((key) => ({
-      entity_type: key,
-      text: piiMappings[key],
+      entity_type: piiMappings[key],
+      entity_placeholder: piiMappings[key],
+      text: key,
     }));
   },
 
