@@ -95,6 +95,7 @@ async function handleConversationChange(newConversationId) {
   );
   showInitialDetectIcon();
   window.helper.setShowInfoForNew(false);
+  window.helper.entityCounts = {};
 }
 
 async function checkIfNewUrl(newConversationId) {

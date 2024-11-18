@@ -194,12 +194,20 @@ window.helper = {
 
   async saveMappingsToStorage() {
     try {
+      //contains non- "no-url" entityCounts
+      const filteredEntityCounts = Object.fromEntries(
+        Object.entries(this.entityCounts).filter(([key]) => key !== "no-url")
+      );
+
       await this.setToStorage({
         piiToPlaceholder: this.piiToPlaceholder,
         placeholderToPii: this.placeholderToPii,
-        entityCounts: this.entityCounts,
+        entityCounts: filteredEntityCounts,
       });
-      console.log("Mappings and counts have been saved to storage.");
+
+      console.log(
+        "Mappings and counts have been saved to storage, excluding 'no-url'."
+      );
     } catch (error) {
       console.error("Error saving mappings to storage:", error);
     }
@@ -242,7 +250,9 @@ window.helper = {
     const data = await this.getFromStorage(null);
     this.piiToPlaceholder = data.piiToPlaceholder || {};
     this.placeholderToPii = data.placeholderToPii || {};
-    this.entityCounts = data.entityCounts || {};
+    if (activeConversationId !== "no-url") {
+      this.entityCounts = data.entityCounts || {};
+    }
 
     if (!this.entityCounts[activeConversationId]) {
       this.entityCounts[activeConversationId] = {};
