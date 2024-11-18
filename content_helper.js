@@ -6,6 +6,7 @@ window.helper = {
   previousUserMessage: "",
   previousEntities: [],
   useOnDeviceModel: false,
+  showInfoForNew: undefined,
 
   placeholderToPii: {},
   piiToPlaceholder: {},
@@ -201,6 +202,36 @@ window.helper = {
       console.log("Mappings and counts have been saved to storage.");
     } catch (error) {
       console.error("Error saving mappings to storage:", error);
+    }
+  },
+
+  async setCurrentEntitiesFromCloud() {
+    this.currentEntities = await this.getCurrentEntitiesFromCloud();
+  },
+
+  createCurrentEntities(mapping) {
+    const currentEntities = Object.entries(mapping).map(([key, value]) => {
+      // 提取 entity_type，不包含最后的数字
+      const entity_type = value.replace(/[0-9]+$/, "");
+
+      return {
+        text: key,
+        entity_placeholder: value,
+        entity_type: entity_type,
+      };
+    });
+
+    return currentEntities;
+  },
+
+  async getCurrentEntitiesFromCloud() {
+    const data = await this.getFromStorage(null);
+    const activeConversationId = this.getActiveConversationId() || "no-url";
+    const pii2placeholderMapping = data.piiToPlaceholder[activeConversationId];
+    if (pii2placeholderMapping) {
+      return this.createCurrentEntities(pii2placeholderMapping);
+    } else {
+      return [];
     }
   },
 
@@ -429,6 +460,10 @@ window.helper = {
     return filteredEntities;
   },
 
+  setShowInfoForNew: function (state) {
+    this.showInfoForNew = state;
+  },
+
   handleDetect: async function () {
     if (!this.enabled) {
       return;
@@ -497,13 +532,22 @@ window.helper = {
       chrome.runtime.getURL("replacePanel.js")
     );
     const modelNumber = window.helper.useOnDeviceModel ? 2 : 1;
-    await createPIIReplacementPanel(detectedEntities, modelNumber);
+    if (!this.showInfoForNew) {
+      await createPIIReplacementPanel(
+        detectedEntities,
+        modelNumber,
+        (hideCheckboxes = true)
+      );
+    } else {
+      await createPIIReplacementPanel(detectedEntities, modelNumber);
+    }
   },
 
   highlightDetectedAndShowReplacementPanel: async function () {
     if (!this.enabled) {
       return;
     }
+    this.getCurrentEntitiesFromCloud();
     await this.highlightWords(this.currentUserMessage, this.currentEntities);
     this.showReplacementPanel(this.currentEntities);
   },

@@ -1,4 +1,8 @@
-export function createPIIReplacementPanel(detectedEntities, modelNumber) {
+export function createPIIReplacementPanel(
+  detectedEntities,
+  modelNumber,
+  hideCheckboxes = false
+) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.type = "text/css";
@@ -20,7 +24,11 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
       (entity) => `
       <li class="pii-item">
         <span>${entity.text} - ${entity.entity_placeholder}</span>
-        <input type="checkbox" class="pii-checkbox" data-entity-text="${entity.text}">
+        ${
+          hideCheckboxes
+            ? ""
+            : `<input type="checkbox" class="pii-checkbox" data-entity-text="${entity.text}">`
+        }
       </li>`
     )
     .join("");
@@ -35,9 +43,15 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
         </div>
       </div> 
       <div class="right-corner-buttons">
-        <button id="highlight-btn">Show tooltip</button>
-        <span id="select-all">Select All</span>
-        <input type="checkbox" id="select-all-checkbox">
+        <button id="highlight-btn">Highlight</button>
+        ${
+          hideCheckboxes
+            ? ""
+            : `<div class="select-all-and-checkbox>
+          <span id="select-all">Select All</span>
+          <input type="checkbox" id="select-all-checkbox">
+        </div>`
+        }
         <button id="close-panel-btn">X</button>
       </div>
     </div>
@@ -52,19 +66,23 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
     </div>
   `;
 
-  document
-    .getElementById("select-all-checkbox")
-    .addEventListener("change", () => {
-      const allChecked = document.getElementById("select-all-checkbox").checked;
-      document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
-        checkbox.checked = allChecked;
+  if (!hideCheckboxes) {
+    document
+      .getElementById("select-all-checkbox")
+      .addEventListener("change", () => {
+        const allChecked = document.getElementById(
+          "select-all-checkbox"
+        ).checked;
+        document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
+          checkbox.checked = allChecked;
+        });
+        toggleButtonsState();
       });
-      toggleButtonsState();
-    });
 
-  document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
-    checkbox.addEventListener("change", toggleButtonsState);
-  });
+    document.querySelectorAll(".pii-checkbox").forEach((checkbox) => {
+      checkbox.addEventListener("change", toggleButtonsState);
+    });
+  }
 
   document.getElementById("replace-btn").addEventListener("click", () => {
     const checkedItems = Array.from(
@@ -121,12 +139,15 @@ export function createPIIReplacementPanel(detectedEntities, modelNumber) {
     panel.style.display = "none";
   });
 
-  document
-    .getElementById("highlight-btn")
-    .addEventListener("click", async () => {
+  const highlightButton = document.getElementById("highlight-btn");
+  if (hideCheckboxes) {
+    highlightButton.classList.add("disabled");
+  } else {
+    highlightButton.classList.remove("disabled");
+    highlightButton.addEventListener("click", async () => {
       await window.helper.highlightDetectedWords();
     });
-
+  }
   observer.observe(document.body, {
     childList: true,
     subtree: true,

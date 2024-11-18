@@ -89,6 +89,12 @@ async function handleConversationChange(newConversationId) {
   );
   addDetectButton();
   checkAllMessagesForReplacement();
+  await window.helper.setCurrentEntitiesFromCloud();
+  const { showInitialDetectIcon } = await import(
+    chrome.runtime.getURL("buttonWidget.js")
+  );
+  showInitialDetectIcon();
+  window.helper.setShowInfoForNew(false);
 }
 
 async function checkIfNewUrl(newConversationId) {
@@ -105,6 +111,7 @@ async function checkIfNewUrl(newConversationId) {
 function typingHandler(e) {
   const input = window.helper.getUserInputElement();
   if (input.parentElement.contains(e.target)) {
+    window.helper.setShowInfoForNew(true);
     clearTimeout(typingTimer);
     typingTimer = setTimeout(doneTyping, doneTypingInterval);
   }

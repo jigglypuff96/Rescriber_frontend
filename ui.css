@@ -50,13 +50,23 @@
   font-size: small;
 }
 
-#highlight-btn disabled {
+#highlight-btn.disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+#highlight-btn.disabled:hover {
   background-color: #cccccc;
   cursor: not-allowed;
 }
 
 #highlight-btn:hover {
   background-color: #e0a800;
+}
+
+.right-corner-buttons {
+  display: flex;
+  flex-direction: row;
 }
 
 #close-panel-btn {
