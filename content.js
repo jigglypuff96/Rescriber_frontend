@@ -3,7 +3,6 @@ let previousEnabled;
 let detectedEntities = [];
 let piiMappings = {};
 let entityCounts = {};
-let useOnDeviceModel = false;
 
 let currentConversationId = window.helper.getActiveConversationId();
 let typingTimer;
@@ -11,17 +10,6 @@ const doneTypingInterval = 1000;
 let isCheckingConversationChange = false;
 
 console.log("Content script loaded!");
-
-chrome.runtime.onMessage.addListener(async function (
-  request,
-  sender,
-  sendResponse
-) {
-  if (request.action === "toggleModel") {
-    await window.helper.toggleModel();
-    sendResponse({ status: "Model toggled" });
-  }
-});
 
 chrome.runtime.onMessage.addListener(async function (
   request,

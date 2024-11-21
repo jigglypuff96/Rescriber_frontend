@@ -5,7 +5,7 @@ window.helper = {
   currentUserMessage: "",
   previousUserMessage: "",
   previousEntities: [],
-  useOnDeviceModel: false,
+  useOnDeviceModel: true,
   showInfoForNew: undefined,
 
   placeholderToPii: {},
@@ -16,7 +16,21 @@ window.helper = {
     tempPiiToPlaceholder: {},
   },
   tempEntityCounts: {},
+  prolificId: "",
+  replaceCount: 0,
+  abstractCount: 0,
 
+  setProlificid(id) {
+    this.prolificId = id;
+    this.replaceCount = 0;
+    this.abstractCount = 0;
+  },
+  addReplaceCount() {
+    this.replaceCount = this.replaceCount + 1;
+  },
+  addAbstractCount() {
+    this.abstractCount = this.abstractCount + 1;
+  },
   async initializeMappings() {
     try {
       const data = await this.getFromStorage(null);
@@ -35,37 +49,6 @@ window.helper = {
     } catch (error) {
       console.error("Error initializing mappings from storage:", error);
     }
-  },
-
-  toggleModel: async function () {
-    this.useOnDeviceModel = !this.useOnDeviceModel;
-    chrome.storage.local.set({ useOnDeviceModel: this.useOnDeviceModel });
-    const panel = document.getElementById("pii-replacement-panel");
-    if (panel) {
-      const { updateModelNumberInPanel } = await import(
-        chrome.runtime.getURL("replacePanel.js")
-      );
-      const modelNumber = window.helper.useOnDeviceModel ? 2 : 1;
-      updateModelNumberInPanel(modelNumber);
-    }
-  },
-  toggleEnabled: function (enabledStatus) {
-    this.enabled = enabledStatus;
-  },
-
-  loadModelState: async function () {
-    this.useOnDeviceModel = await new Promise((resolve, reject) => {
-      chrome.storage.local.get(["useOnDeviceModel"], function (result) {
-        if (chrome.runtime.lastError) {
-          return reject(chrome.runtime.lastError);
-        }
-        resolve(
-          result.useOnDeviceModel !== undefined
-            ? result.useOnDeviceModel
-            : false
-        );
-      });
-    });
   },
 
   getEnabledStatus: async function () {

@@ -1,5 +1,5 @@
 export async function getOnDeviceResponseDetect(userMessageDetect) {
-  const response = await fetch("https://llmstudy.peach.codes:5000/detect", {
+  const response = await fetch("https://localhost:5000/detect", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -25,7 +25,7 @@ export async function getOnDeviceResponseDetect(userMessageDetect) {
 }
 
 export async function getOnDeviceResponseCluster(userMessageCluster) {
-  const response = await fetch("https://llmstudy.peach.codes:5000/cluster", {
+  const response = await fetch("https://localhost:5000/cluster", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -45,7 +45,7 @@ export async function getOnDeviceAbstractResponse(
   const userMessage = `<Text>${currentMessage}</Text>\n<ProtectedInformation>${abstractList.join(
     ", "
   )}</ProtectedInformation>`;
-  const response = await fetch("https://llmstudy.peach.codes:5000/abstract", {
+  const response = await fetch("https://localhost:5000/abstract", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

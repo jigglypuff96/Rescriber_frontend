@@ -64,6 +64,13 @@
   background-color: #e0a800;
 }
 
+.pii-replacement-header .select-all-and-checkbox {
+  font-size: 12px;
+  align-items: center;
+  vertical-align: middle;
+  align-content: center;
+}
+
 .right-corner-buttons {
   display: flex;
   flex-direction: row;
