@@ -352,7 +352,6 @@ async function initialize() {
   console.log("calling initialize button");
   // initializeButton();
   await requestAnimationFrame(waitForInitializeButton);
-  await window.helper.loadModelState();
   observeStopButton();
 }
 
