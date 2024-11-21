@@ -54,5 +54,11 @@ export async function getOnDeviceAbstractResponse(
   });
   const data = await response.json();
   const resultString = data.results;
-  return resultString;
+  return normalizeText(resultString);
+}
+
+function normalizeText(text) {
+  // Remove extra spaces between characters caused by "t h i s"
+  text = text.replace(/\s+/g, " ").trim(); // Replace multiple spaces with one and trim ends
+  return text;
 }

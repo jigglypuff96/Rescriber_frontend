@@ -43,18 +43,22 @@ export function createPIIReplacementPanel(
         </div>
       </div> 
       <div class="right-corner-buttons">
-        <button id="highlight-btn">Highlight</button>
-        ${
-          hideCheckboxes
-            ? ""
-            : `<div class="select-all-and-checkbox>
-          <span id="select-all">Select All</span>
-          <input type="checkbox" id="select-all-checkbox">
-        </div>`
-        }
-        <button id="close-panel-btn">X</button>
-        <button id="user-info">U</button>
-        <button id="completion-code">C</button>
+        <div class="top-row">
+          <button id="highlight-btn">Highlight</button>
+          ${
+            hideCheckboxes
+              ? ""
+              : `<div class="select-all-and-checkbox">
+            <span id="select-all">Select All</span>
+            <input type="checkbox" id="select-all-checkbox">
+          </div>`
+          }
+          <button id="close-panel-btn">X</button>
+        </div>
+        <div class="bottom-row">
+          <button id="user-info" class="icon-button"></button>
+          <button id="completion-code" class="icon-button"></button>
+        </div>
       </div>
     </div>
     <ul id="pii-list">${piiList}</ul>

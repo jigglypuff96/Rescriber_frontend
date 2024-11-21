@@ -32,7 +32,9 @@
         "getProvidedApiKey.js",
         "images/check4.png",
         "images/magnifier5.png",
-        "images/revert.jpg"
+        "images/revert.jpg",
+        "images/code-icon.png",
+        "images/user-icon.png"
       ],
       "matches": ["https://chatgpt.com/*"]
     }

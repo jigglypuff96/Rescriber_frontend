@@ -73,14 +73,29 @@
 
 .right-corner-buttons {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px; /* Spacing between elements in the top row */
+}
+
+.bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px; /* Spacing between icons */
 }
 
 #close-panel-btn {
   background-color: #6c757d;
   color: #fff;
   border: none;
-  border-radius: 50%;
+  border-radius: 50%; /* Ensures the button remains circular */
   padding: 3px 7px;
   cursor: pointer;
   font-size: 12px;
@@ -88,6 +103,23 @@
 
 #close-panel-btn:hover {
   background-color: #5a6268;
+}
+
+.icon-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+}
+
+#user-info {
+  background-image: url("images/user-icon.png");
+}
+
+#completion-code {
+  background-image: url("images/code-icon.png");
 }
 
 #pii-list {
