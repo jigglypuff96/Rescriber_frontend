@@ -46,7 +46,9 @@ async function checkForConversationChange() {
       currentConversationId = newConversationId;
       removeTooltipAndPanel();
       document.removeEventListener("input", typingHandler);
+      document.removeEventListener("paste", typingHandler);
       document.addEventListener("input", typingHandler);
+      document.addEventListener("paste", typingHandler);
       const { addDetectButton } = await import(
         chrome.runtime.getURL("buttonWidget.js")
       );
@@ -71,7 +73,9 @@ async function handleConversationChange(newConversationId) {
   currentConversationId = newConversationId;
   removeTooltipAndPanel();
   document.removeEventListener("input", typingHandler);
+  document.removeEventListener("paste", typingHandler);
   document.addEventListener("input", typingHandler);
+  document.addEventListener("paste", typingHandler);
   const { addDetectButton } = await import(
     chrome.runtime.getURL("buttonWidget.js")
   );

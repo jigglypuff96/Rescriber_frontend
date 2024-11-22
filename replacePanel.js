@@ -55,10 +55,6 @@ export function createPIIReplacementPanel(
           }
           <button id="close-panel-btn">X</button>
         </div>
-        <div class="bottom-row">
-          <button id="user-info" class="icon-button"></button>
-          <button id="completion-code" class="icon-button"></button>
-        </div>
       </div>
     </div>
     <ul id="pii-list">${piiList}</ul>
