@@ -36,7 +36,7 @@ export function createPIIReplacementPanel(
     <div class="pii-replacement-header">
       <div class="name-model-info">
         <div class="tool-name">
-          <p>PrivacyGuard</p>
+          <p>Rescriber</p>
         </div>
         <div class="tool-model-number">
           <p>Model ${modelNumber}</p>
