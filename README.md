@@ -41,7 +41,7 @@
 
    - Open **Terminal** and type the following commands line by line:
      ```bash
-     cd ~/Downloads/pii_backend-main
+     cd ~/Downloads/Rescriber_backend-main
      pip install -r requirements.txt  # or pip3 install -r requirements.txt
      python prod.py  # or python3 prod.py
      ```
@@ -58,7 +58,7 @@
 5. **Install the Chrome Extension:**
 
    - Go to [chrome://extensions](chrome://extensions).
-   - Follow the instructions at [https://github.com/jigglypuff96/inline_pii_replacer/blob/ondevice/InstallChromeExtension.md](https://github.com/jigglypuff96/inline_pii_replacer/blob/ondevice/InstallChromeExtension.md) to install the extension.
+   - Follow the instructions at [https://github.com/jigglypuff96/Resciber_frontend/blob/ondevice/InstallChromeExtension.md](https://github.com/jigglypuff96/Resciber_frontend/blob/ondevice/InstallChromeExtension.md) to install the extension.
    - Verify that the extension **"Rescriber"** appears in the list of installed extensions.
 
 6. **Start Chatting:**
