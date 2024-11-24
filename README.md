@@ -29,12 +29,12 @@
 
 1. **Download and Set Up Frontend:**
 
-   - Download the ZIP file from [https://github.com/jigglypuff96/inline_pii_replacer/tree/ondevice](https://github.com/jigglypuff96/inline_pii_replacer/tree/ondevice).
+   - Download the ZIP file from [https://github.com/jigglypuff96/Rescriber_frontend/tree/ondevice](https://github.com/jigglypuff96/Rescriber_frontend/tree/ondevice).
    - Unzip it inside your Mac's `Downloads` folder.
 
 2. **Download and Set Up Backend:**
 
-   - Download the ZIP file from [https://github.com/jigglypuff96/pii_backend](https://github.com/jigglypuff96/pii_backend).
+   - Download the ZIP file from [https://github.com/jigglypuff96/Rescriber_backend](https://github.com/jigglypuff96/Rescriber_backend).
    - Unzip it inside your Mac's `Downloads` folder.
 
 3. **Start the Backend Server:**
@@ -84,8 +84,8 @@
 
 1. **Locate the files:**
 
-   - The backend files are in the `~/Downloads/pii_backend-main` folder.
-   - The frontend files are in the `~/Downloads/inline_pii_replacer-ondevice` folder.
+   - The backend files are in the `~/Downloads/Rescriber_backend-main` folder.
+   - The frontend files are in the `~/Downloads/Rescriber_frontend-ondevice` folder.
 
 2. **Delete the folders:**
    - Drag both folders to the Trash.
