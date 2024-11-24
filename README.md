@@ -1,5 +1,7 @@
 # Installation Guide
 
+Please refer to the installation sample video for guidance: [https://drive.google.com/file/d/1z5C2IAgdim-qUsQ1AyllRFxpebd9qLHe/view?usp=drive_link](https://drive.google.com/file/d/1z5C2IAgdim-qUsQ1AyllRFxpebd9qLHe/view?usp=sharing)
+
 ## **Prerequisites**
 
 1. **Install Python 3:**
@@ -73,6 +75,11 @@
 ---
 
 # Uninstallation Guide
+
+Please refer to the uninstallation sample videos for guidance:
+1. [https://drive.google.com/file/d/1agCY6uCG1ZUs9THK4TBd4njEd6Qhd5vP/view?usp=sharing](https://drive.google.com/file/d/1agCY6uCG1ZUs9THK4TBd4njEd6Qhd5vP/view?usp=sharing) 
+2. [https://drive.google.com/file/d/1NXiA11rhA5UCfRF81UCO_CNscFchiU4S/view?usp=sharing](https://drive.google.com/file/d/1NXiA11rhA5UCfRF81UCO_CNscFchiU4S/view?usp=sharing)
+
 
 ## **Stop the Backend Server**
 
