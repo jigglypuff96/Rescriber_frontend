@@ -49,7 +49,7 @@
 
 4. **Close and Launch Chrome with SSL Error Ignored:**
 
-   - Open a new **Terminal** and type the following command line by line:
+   - Open a new **Terminal** and type the following command line by line. Please feel free to copy the current link [https://github.com/jigglypuff96/Rescriber_frontend/tree/ondevice](https://github.com/jigglypuff96/Rescriber_frontend/tree/ondevice), as well as the two commands, into any text editor or open the link in Safari. This way, you'll still have access to them if Chrome is closed. The second command will automatically reopen Chrome: 
      ```bash
      killall Google\ Chrome
      open -a "Google Chrome" --args --ignore-certificate-errors
@@ -57,8 +57,9 @@
 
 5. **Install the Chrome Extension:**
 
-   - Go to [chrome://extensions](chrome://extensions).
-   - Follow the instructions at [https://github.com/jigglypuff96/Resciber_frontend/blob/ondevice/InstallChromeExtension.md](https://github.com/jigglypuff96/Resciber_frontend/blob/ondevice/InstallChromeExtension.md) to install the extension.
+   - Once Chrome is opened, you will see a notification indicating that you are using the --ignore-certificate-errors flag. This is normal and nothing to worry about; it is required because the extension is currently under development, and this flag allows us to bypass certain production-level security checks during testing.
+   - Leave the current tab unchanged, and open a new tab, go to [chrome://extensions](chrome://extensions)
+   - Follow the instructions at [https://github.com/jigglypuff96/Rescriber_frontend/blob/ondevice/InstallChromeExtension.md](https://github.com/jigglypuff96/Rescriber_frontend/blob/ondevice/InstallChromeExtension.md) to install the extension.
    - Verify that the extension **"Rescriber"** appears in the list of installed extensions.
 
 6. **Start Chatting:**
@@ -117,7 +118,7 @@ If you installed Python, Ollama, or Google Chrome specifically for this task, yo
 
 2. **Uninstall Ollama:**
 
-   - Find the Ollama app in your Applications folder.
+   - Find the Ollama app in your Applications and Downloads folder.
    - Drag it to the Trash.
 
 3. **Uninstall Google Chrome:**
