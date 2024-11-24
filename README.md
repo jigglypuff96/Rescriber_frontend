@@ -1,6 +1,6 @@
 # Installation Guide
 
-Please refer to the installation sample video for guidance: [https://drive.google.com/file/d/1z5C2IAgdim-qUsQ1AyllRFxpebd9qLHe/view?usp=drive_link](https://drive.google.com/file/d/1z5C2IAgdim-qUsQ1AyllRFxpebd9qLHe/view?usp=sharing)
+Please refer to the installation sample video for guidance: [https://drive.google.com/file/d/1Jwx-GTh2EWEWsK7heWo2LndlECKfATM-/view?usp=sharing](https://drive.google.com/file/d/1Jwx-GTh2EWEWsK7heWo2LndlECKfATM-/view?usp=sharing)
 
 ## **Prerequisites**
 
@@ -77,8 +77,8 @@ Please refer to the installation sample video for guidance: [https://drive.googl
 # Uninstallation Guide
 
 Please refer to the uninstallation sample videos for guidance:
-1. [https://drive.google.com/file/d/1agCY6uCG1ZUs9THK4TBd4njEd6Qhd5vP/view?usp=sharing](https://drive.google.com/file/d/1agCY6uCG1ZUs9THK4TBd4njEd6Qhd5vP/view?usp=sharing) 
-2. [https://drive.google.com/file/d/1NXiA11rhA5UCfRF81UCO_CNscFchiU4S/view?usp=sharing](https://drive.google.com/file/d/1NXiA11rhA5UCfRF81UCO_CNscFchiU4S/view?usp=sharing)
+1. [https://drive.google.com/file/d/1FDaqUF6ypkoK3wF0TIQ8q-V_rkGpi0SC/view?usp=sharing](https://drive.google.com/file/d/1FDaqUF6ypkoK3wF0TIQ8q-V_rkGpi0SC/view?usp=sharing) 
+2. [https://drive.google.com/file/d/1NZwrO-kMh2j4HEN9AhQaPu-i9jKyUMOg/view?usp=sharing](https://drive.google.com/file/d/1NZwrO-kMh2j4HEN9AhQaPu-i9jKyUMOg/view?usp=sharing)
 
 
 ## **Stop the Backend Server**
