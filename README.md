@@ -70,7 +70,7 @@ Please refer to the installation sample video for guidance: [https://drive.googl
      ```bash
      python3 prod.py
      ```
-   - Wait for the message `"Initialization complete. Now you can start using the tool!"` to appear in the terminal.
+   - Wait for the message `"Initialization complete. Now you can start using the tool!"` to appear in the terminal. It might take around 1 minute. If you see any errors, contact the research team.
 
 4. **Close and Launch Chrome with SSL Error Ignored:**
 
