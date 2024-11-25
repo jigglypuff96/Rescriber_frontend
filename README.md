@@ -21,7 +21,7 @@ Please refer to the installation sample video for guidance: [https://drive.googl
 2. **Install Ollama:**
 
    - Download and install Ollama from [https://ollama.com/download/Ollama-darwin.zip](https://ollama.com/download/Ollama-darwin.zip).
-   - Once you see that Ollama is running, please open a Terminal window, and typethe following command:
+   - Once you see that Ollama is running, please open a Terminal window, and type the following command:
      ```bash
      ollama pull llama3
      ```
