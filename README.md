@@ -21,6 +21,10 @@ Please refer to the installation sample video for guidance: [https://drive.googl
 2. **Install Ollama:**
 
    - Download and install Ollama from [https://ollama.com/download/Ollama-darwin.zip](https://ollama.com/download/Ollama-darwin.zip).
+   - Once you see that Ollama is running, please open a Terminal window, and typethe following command:
+     ```bash
+     ollama pull llama3
+     ```
 
 3. **Install Google Chrome:**
    - Ensure Chrome is installed and and it will later be closed before using the tool.
@@ -42,10 +46,29 @@ Please refer to the installation sample video for guidance: [https://drive.googl
 3. **Start the Backend Server:**
 
    - Open **Terminal** and type the following commands line by line:
+     1. Go to the folder that contains Rescriber backend files
      ```bash
      cd ~/Downloads/Rescriber_backend-main
-     pip install -r requirements.txt  # or pip3 install -r requirements.txt
-     python prod.py  # or python3 prod.py
+     ```
+     2. Pip install all the necessary dependencies:
+     ```bash
+     pip install -r requirements.txt
+     ```
+     or
+     ```bash
+     pip3 install -r requirements.txt
+     ```
+     or
+     ```bash
+     python3 -m pip install -r requirements.txt
+     ```
+     3. Start running the python server
+     ```bash
+     python prod.py
+     ```
+     or
+     ```bash
+     python3 prod.py
      ```
    - Wait for the message `"Initialization complete. Now you can start using the tool!"` to appear in the terminal.
 
