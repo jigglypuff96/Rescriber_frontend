@@ -364,40 +364,6 @@ window.helper = {
     return clustersResponse;
   },
 
-  getAbstractResponse: async function (
-    originalMessage,
-    currentMessage,
-    abstractList
-  ) {
-    let abstractResponse;
-    if (!this.useOnDeviceModel) {
-      const { getCloudAbstractResponse } = await import(
-        chrome.runtime.getURL("openai.js")
-      );
-      const abstractResponseResult = await getCloudAbstractResponse(
-        originalMessage,
-        currentMessage,
-        abstractList
-      );
-      const abstractResponseObject = JSON.parse(abstractResponseResult);
-      if (abstractResponseObject) {
-        abstractResponse = abstractResponseObject.text;
-      } else {
-        abstractResponse = undefined;
-      }
-    } else {
-      const { getOnDeviceAbstractResponse } = await import(
-        chrome.runtime.getURL("ondevice.js")
-      );
-      abstractResponse = await getOnDeviceAbstractResponse(
-        originalMessage,
-        currentMessage,
-        abstractList
-      );
-    }
-    return abstractResponse;
-  },
-
   filterEntities: function (entities) {
     const entityPlaceholders = [
       "ADDRESS",
@@ -829,19 +795,67 @@ window.helper = {
     currentMessage,
     abstractList
   ) {
-    const abstractResponse = await this.getAbstractResponse(
-      originalMessage,
-      currentMessage,
-      abstractList
-    );
-
-    if (abstractResponse) {
+    // Real-time update to UI for each streamed result
+    const onResultCallback = (partialAbstractResponse) => {
       const input = this.getUserInputElement();
       if (input) {
-        input.innerText = abstractResponse;
-        this.currentUserMessage = abstractResponse;
+        // Update the input field with the partial response
+        input.innerText = partialAbstractResponse;
+        this.currentUserMessage = partialAbstractResponse;
       }
+    };
+
+    // Get the abstract response with the callback
+    await this.getAbstractResponse(
+      originalMessage,
+      currentMessage,
+      abstractList,
+      onResultCallback
+    );
+  },
+
+  getAbstractResponse: async function (
+    originalMessage,
+    currentMessage,
+    abstractList,
+    onResultCallback
+  ) {
+    let abstractResponse = "";
+    if (!this.useOnDeviceModel) {
+      const { getCloudAbstractResponse } = await import(
+        chrome.runtime.getURL("openai.js")
+      );
+      const abstractResponseResult = await getCloudAbstractResponse(
+        originalMessage,
+        currentMessage,
+        abstractList
+      );
+      const abstractResponseObject = JSON.parse(abstractResponseResult);
+      if (abstractResponseObject) {
+        abstractResponse = abstractResponseObject.text;
+        // Since cloud models are not streamed, call callback with the final result
+        onResultCallback(abstractResponse);
+      } else {
+        abstractResponse = undefined;
+      }
+    } else {
+      const { getOnDeviceAbstractResponse } = await import(
+        chrome.runtime.getURL("ondevice.js")
+      );
+      // Stream the results and update in real-time via the callback
+      await getOnDeviceAbstractResponse(
+        originalMessage,
+        currentMessage,
+        abstractList,
+        (partialResult) => {
+          // Update the cumulative abstract response
+          abstractResponse = partialResult;
+          // Call the provided callback for UI updates
+          onResultCallback(partialResult);
+        }
+      );
     }
+    return abstractResponse;
   },
 
   updateDetectedEntities: function () {

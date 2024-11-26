@@ -49,7 +49,8 @@ export async function getOnDeviceResponseCluster(userMessageCluster) {
 export async function getOnDeviceAbstractResponse(
   originalMessage,
   currentMessage,
-  abstractList
+  abstractList,
+  onResultCallback
 ) {
   const userMessage = `<Text>${currentMessage}</Text>\n<ProtectedInformation>${abstractList.join(
     ", "
@@ -61,7 +62,31 @@ export async function getOnDeviceAbstractResponse(
     },
     body: JSON.stringify({ message: userMessage }),
   });
-  const data = await response.json();
-  const resultString = data.results;
-  return resultString;
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // Process each line of the response
+    const lines = buffer.split("\n").filter((line) => line.trim() !== "");
+    for (const line of lines) {
+      try {
+        const jsonObject = JSON.parse(line);
+        if (jsonObject.results) {
+          // Call the callback with the current results
+          await onResultCallback(jsonObject.results);
+        }
+      } catch (e) {
+        console.error("Error parsing JSON chunk:", e);
+      }
+    }
+
+    buffer = "";
+  }
 }
