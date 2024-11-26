@@ -1,27 +1,36 @@
-export async function getOnDeviceResponseDetect(userMessageDetect) {
+export async function getOnDeviceResponseDetect(userMessage, onResultCallback) {
   const response = await fetch("https://localhost:5331/detect", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ message: userMessageDetect }),
+    body: JSON.stringify({ message: userMessage }),
   });
 
-  const data = await response.json();
-  let jsonObject;
-  // To receive response from both JS and Python backend
-  if (data.results !== undefined || null) {
-    if (data.results == "") {
-      return;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n").filter((line) => line.trim() !== "");
+    for (const line of lines) {
+      try {
+        const jsonObject = JSON.parse(line);
+        if (jsonObject.results) {
+          await onResultCallback(jsonObject.results);
+        }
+      } catch (e) {
+        console.error("Error parsing JSON:", e);
+      }
     }
-    jsonObject = data.results;
-  } else {
-    if (data == "") {
-      return;
-    }
-    jsonObject = data;
+
+    // 清空 buffer
+    buffer = "";
   }
-  return jsonObject;
 }
 
 export async function getOnDeviceResponseCluster(userMessageCluster) {

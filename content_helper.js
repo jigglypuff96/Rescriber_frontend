@@ -463,50 +463,41 @@ window.helper = {
     }
     const userMessage = this.getUserInputText();
     this.currentUserMessage = userMessage;
-    let entities = await this.getResponseDetect(this.currentUserMessage);
-    if (!entities) {
-      this.currentEntities = [];
-      return false;
-    }
-    entities = this.filterEntities(entities);
-    if (entities.length === 0) {
-      this.currentEntities = [];
-      return false;
-    }
-    const clusterMessage = this.generateUserMessageCluster(
-      this.currentUserMessage,
-      entities
-    );
-    let finalClusters = [];
-    if (clusterMessage && !this.useOnDeviceModel) {
-      const clustersResponse = await this.getResponseCluster(clusterMessage);
-      const clusters = JSON.parse(clustersResponse);
-      const { finalClusters, associatedGroups } =
-        this.simplifyClustersWithTypes(clusters, entities);
+
+    this.currentEntities = [];
+
+    const onResultCallback = async (newEntities) => {
+      console.log("New entities received:", newEntities);
+      const filteredEntities = this.filterEntities(newEntities);
+      if (filteredEntities.length === 0) return;
+      let finalClusters = filteredEntities.map((entity) => [entity.text]);
       const detectedEntities = await this.processEntities(
-        entities,
+        filteredEntities,
         finalClusters
       );
-
       this.currentEntities = detectedEntities;
-      return true;
-    }
-    finalClusters = entities.map((entity) => [entity.text]);
-    const detectedEntities = await this.processEntities(
-      entities,
-      finalClusters
+
+      await this.highlightWords(this.currentUserMessage, this.currentEntities);
+      await this.updatePIIReplacementPanel(this.currentEntities);
+    };
+
+    const { getOnDeviceResponseDetect } = await import(
+      chrome.runtime.getURL("ondevice.js")
     );
-    this.currentEntities = detectedEntities;
+    await getOnDeviceResponseDetect(userMessage, onResultCallback);
+
+    if (this.currentEntities.length === 0) {
+      return false;
+    }
+
     return true;
   },
 
-  handleDetectAndHighlight: async function () {
-    if (!this.enabled) {
-      return;
-    }
+  handleDetectAndUpdatePanel: async function () {
     if (await this.handleDetect()) {
-      await this.highlightWords(this.currentUserMessage, this.currentEntities);
-      await this.showReplacementPanel(this.currentEntities);
+      console.log("Detection and panel update complete!");
+    } else {
+      await this.updatePIIReplacementPanel(this.currentEntities);
     }
   },
 
@@ -872,17 +863,6 @@ window.helper = {
 
   getCurrentEntities: function () {
     return this.currentEntities;
-  },
-
-  handleDetectAndUpdatePanel: async function () {
-    if (await this.handleDetect()) {
-      await this.highlightWords(this.currentUserMessage, this.currentEntities);
-      await this.updatePIIReplacementPanel(this.currentEntities);
-      return;
-    } else {
-      await this.updatePIIReplacementPanel(this.currentEntities);
-      return;
-    }
   },
 
   updatePIIReplacementPanel: async function (detectedEntities) {
