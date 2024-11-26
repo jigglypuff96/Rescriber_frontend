@@ -97,6 +97,16 @@ Please refer to the installation sample video for guidance: [https://drive.googl
 
 ---
 
+# Post-study data sharing
+
+Please open ~/Downloads/Rescriber_backend-main folder, and share with us the timing log "timing.txt" with the researcher.
+A sample timing log contains contents like this: 
+2024-11-26 00:02:59 - Result chunk: {'results': []} (Time: 61.62s)
+2024-11-26 00:03:17 - Detect request received!
+2024-11-26 00:03:22 - Result chunk: {'results': [{'entity_type': 'NAME', 'text': 'Lisa'}]} (Time: 4.66s)
+
+---
+
 # Uninstallation Guide
 
 Please refer to the uninstallation sample videos for guidance:
