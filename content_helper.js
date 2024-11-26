@@ -795,17 +795,18 @@ window.helper = {
     currentMessage,
     abstractList
   ) {
-    // Real-time update to UI for each streamed result
     const onResultCallback = (partialAbstractResponse) => {
       const input = this.getUserInputElement();
       if (input) {
         // Update the input field with the partial response
-        input.innerText = partialAbstractResponse;
-        this.currentUserMessage = partialAbstractResponse;
+        input.innerText = this.applyAbstractResponse(
+          partialAbstractResponse,
+          input.innerText
+        );
+        this.currentUserMessage = input.innerText;
       }
     };
 
-    // Get the abstract response with the callback
     await this.getAbstractResponse(
       originalMessage,
       currentMessage,
@@ -856,6 +857,26 @@ window.helper = {
       );
     }
     return abstractResponse;
+  },
+
+  applyAbstractResponse: function (partialAbstractResponse, current_message) {
+    // Replace all the protected terms with their abstracted version
+    if (!partialAbstractResponse || partialAbstractResponse.length === 0) {
+      return current_message;
+    }
+
+    const sortedResponses = partialAbstractResponse.sort(
+      (a, b) => b.protected.length - a.protected.length
+    );
+
+    let modifiedMessage = current_message;
+
+    sortedResponses.forEach(({ protected: protectedValue, abstracted }) => {
+      const regex = new RegExp(protectedValue, "g");
+      modifiedMessage = modifiedMessage.replace(regex, abstracted);
+    });
+
+    return modifiedMessage;
   },
 
   updateDetectedEntities: function () {
