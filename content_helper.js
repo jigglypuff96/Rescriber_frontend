@@ -801,7 +801,8 @@ window.helper = {
         // Update the input field with the partial response
         input.innerText = this.applyAbstractResponse(
           partialAbstractResponse,
-          input.innerText
+          input.innerText,
+          abstractList
         );
         this.currentUserMessage = input.innerText;
       }
@@ -859,15 +860,18 @@ window.helper = {
     return abstractResponse;
   },
 
-  applyAbstractResponse: function (partialAbstractResponse, current_message) {
-    // Replace all the protected terms with their abstracted version
+  applyAbstractResponse: function (
+    partialAbstractResponse,
+    current_message,
+    abstractList
+  ) {
     if (!partialAbstractResponse || partialAbstractResponse.length === 0) {
       return current_message;
     }
 
-    const sortedResponses = partialAbstractResponse.sort(
-      (a, b) => b.protected.length - a.protected.length
-    );
+    const sortedResponses = partialAbstractResponse
+      .filter((item) => abstractList.includes(item.protected)) // Only include terms in the abstractList
+      .sort((a, b) => b.protected.length - a.protected.length);
 
     let modifiedMessage = current_message;
 
