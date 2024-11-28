@@ -135,7 +135,7 @@ Please refer to the uninstallation sample videos for guidance:
 
 ## **Uninstall the Chrome Extension**
 
-1. Go to [chrome://extensions](chrome://extensions).
+1. Go to `[chrome://extensions](chrome://extensions)`.
 2. Locate the extension named **"Rescriber"**.
 3. Click **Remove** to uninstall it.
 
