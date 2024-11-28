@@ -11,11 +11,7 @@ Please refer to the installation sample video for guidance: [https://drive.googl
      ```bash
      python3 --version
      ```
-     or:
-     ```bash
-     python --version
-     ```
-   - Ensure `pip` or `pip3` is available for installing dependencies:  
+   - Ensure `pip3` is available for installing dependencies:  
      [https://pypi.org/project/pip/](https://pypi.org/project/pip/).
 
 2. **Install Ollama:**
@@ -54,19 +50,7 @@ Please refer to the installation sample video for guidance: [https://drive.googl
      ```bash
      python3 -m pip install -r requirements.txt
      ```
-     or
-     ```bash
-     pip install -r requirements.txt
-     ```
-     or
-     ```bash
-     pip3 install -r requirements.txt
-     ```
      3. Start running the python server
-     ```bash
-     python prod.py
-     ```
-     or
      ```bash
      python3 prod.py
      ```
