@@ -52,15 +52,15 @@ Please refer to the installation sample video for guidance: [https://drive.googl
      ```
      2. Pip install all the necessary dependencies:
      ```bash
+     python3 -m pip install -r requirements.txt
+     ```
+     or
+     ```bash
      pip install -r requirements.txt
      ```
      or
      ```bash
      pip3 install -r requirements.txt
-     ```
-     or
-     ```bash
-     python3 -m pip install -r requirements.txt
      ```
      3. Start running the python server
      ```bash
