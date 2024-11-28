@@ -35,12 +35,12 @@ Please refer to the installation sample video for guidance: [https://drive.googl
 
 1. **Download and Set Up Frontend:**
 
-   - Download the ZIP file from [https://github.com/jigglypuff96/Rescriber_frontend/tree/ondevice](https://github.com/jigglypuff96/Rescriber_frontend/tree/ondevice).
+   - Download the ZIP file from [https://github.com/jigglypuff96/Rescriber_frontend/archive/refs/heads/ondevice.zip](https://github.com/jigglypuff96/Rescriber_frontend/archive/refs/heads/ondevice.zip).
    - Unzip it inside your Mac's `Downloads` folder.
 
 2. **Download and Set Up Backend:**
 
-   - Download the ZIP file from [https://github.com/jigglypuff96/Rescriber_backend](https://github.com/jigglypuff96/Rescriber_backend).
+   - Download the ZIP file from [https://github.com/jigglypuff96/Rescriber_backend/archive/refs/heads/main.zip](https://github.com/jigglypuff96/Rescriber_backend/archive/refs/heads/main.zip).
    - Unzip it inside your Mac's `Downloads` folder.
 
 3. **Start the Backend Server:**
